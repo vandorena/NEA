@@ -1,4 +1,5 @@
 from ecmwf.opendata import Client
+import datetime
 
 BASECLIENT_PHYSICS = Client(
     source="ecmwf",
@@ -22,6 +23,12 @@ class Grib_Modifiers:
     def __init__(self) -> None:
         self._current_client = None
         self._current_address = None
+        self._current_folder = None
+        self._update_folder_path()
+
+    def _update_folder_path(self):
+        "Updates Folder Path to current time"
+        self._current_folder = f"C:\Users\Alex\Documents\Work\A-Levels-6th-Form\gribs\{datetime.date}\{datetime.time.hour}-{datetime.time.minute}-{datetime.time.second}"
     
 
 class ECMWF_API(Grib_Modifiers):
@@ -52,3 +59,4 @@ class ECMWF_API(Grib_Modifiers):
             self._current_client.source = "azure"
         else:
             self._current_client.source = "ecmwf"
+    
