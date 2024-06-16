@@ -4,3 +4,8 @@
 /venv
 venv
 *.txt
+*.grib2
+.__pycache__
+/__pycache__
+\__pycache__
+*__pycache__

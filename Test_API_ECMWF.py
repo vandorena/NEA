@@ -2,17 +2,7 @@ from ecmwf.opendata import Client
 import datetime
 
 
-#client = Client()
 
-#client.retrieve(
- #   source="azure",
-  #  model="ifs",
-   # step=240,
-    #type="fc",
-    #param="msl",
-    #infer_stream_keyword=True,
-    #target="gribs\data.grib2",
-#)
 
 def start_stop_dates_time():
 
@@ -22,8 +12,8 @@ def start_stop_dates_time():
     """
     yyyymmdd = str(datetime.datetime.now())
     yyyymmdd = f"{yyyymmdd[:4]}{yyyymmdd[5:7]}{yyyymmdd[8:10]}{yyyymmdd[10:11]}"
-    print(yyyymmdd)
-    print(datetime.datetime.now())
+    #print(yyyymmdd)
+    #print(datetime.datetime.now())
     cycle = str(datetime.datetime.now())
     cycle = int(cycle[11] + cycle[12])
     if cycle < 6:
@@ -40,5 +30,17 @@ def start_stop_dates_time():
 
     return cycle, yyyymmdd,enddate
 
+
 if __name__ == "__main__":
     time,start,stop = start_stop_dates_time()
+    client = Client()
+
+    client.retrieve(
+        source="azure",
+        model="ifs",
+        step=240,
+        type="fc",
+        param="msl",
+        infer_stream_keyword=True,
+        target="gribs\data.grib2",
+    )
