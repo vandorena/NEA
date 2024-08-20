@@ -7,4 +7,4 @@ venv
 *.grib2
 /research
 \research
-*research
+*.pdf
