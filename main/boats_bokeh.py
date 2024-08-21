@@ -1,0 +1,3 @@
+
+def boats(doc):
+    pass
