@@ -40,6 +40,8 @@ class Boat:
         for i in range(0,len(wind_speeds)):
             self.data[wind_speeds[i]] = speeds[i]
         return
-                            
-                    
 
+    def find_polar_speed(self,windspeed,heading):
+        reference_speeds = self.data["wind_list"]
+        reference_headings = self.data["heading_list"]
+                    
