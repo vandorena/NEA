@@ -17,3 +17,6 @@ def find_boats():
 
 def boats(doc):
     find_boats()
+
+if __name__ == "__main__":
+    find_boats()

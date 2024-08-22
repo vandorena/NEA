@@ -41,7 +41,15 @@ class Boat:
             self.data[wind_speeds[i]] = speeds[i]
         return
 
+    def _list_to_int(self,list:list):
+        new_list = []
+        for i in range(0,len(list)):
+            new_list.append(int(list[i]))
+        return new_list
+
     def find_polar_speed(self,windspeed,heading):
-        reference_speeds = self.data["wind_list"]
-        reference_headings = self.data["heading_list"]
-                    
+        reference_speeds = self._list_to_int(self.data["wind_list"])
+        reference_headings = self._list_to_int(self.data["heading_list"])
+        current_list_length = len(reference_speeds)
+        found = False
+        while not found:
