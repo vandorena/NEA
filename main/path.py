@@ -35,6 +35,11 @@ class Path:
             "ocean_current_speed": [],
         }
 
+    def set_start(self):
+        self._started = True
+
+    def set_end(self):
+        self._ended = True
     def get_previous_point(self) -> tuple:
         if self._started == False:
             return self.start_lattitude, self.start_longitude
@@ -52,3 +57,20 @@ class Path:
                 self.path_data[current_value].append(data_array[i])
         else:
             raise LogArrayLengthException
+        
+    def getXgetY(self)-> tuple:
+        return self.path_data["lat"],self.path_data["lon"]
+    
+    def _find_index(self,lat,lon) -> int:
+        lat_elements_to_check = len(self.path_data["lat"])
+        current_lat_list = self.path_data["lat"]
+        halt = False
+        lat_index = []
+        lon_index = []
+        while not halt:
+            lat_index.append(current_lat_list.index())
+            
+
+    
+    def point_query(self,lat,lon) -> tuple:
+        """lat and lon must be taken from the lists given by the getXgetY function"""
