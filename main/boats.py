@@ -24,7 +24,7 @@ class Boat:
                     wind_speeds.append(values[j])
                 else:
                     if i == 1:
-                        if (j % 2) == 1:
+                        if (j%2) == 1:
                             headings.append(float(values[j]))
                         else:
                             speedholder.append(float(values[j]))
