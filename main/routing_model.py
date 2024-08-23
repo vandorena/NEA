@@ -13,3 +13,6 @@ class Routing_Model:
         end_longitude = float(input("Enter the end longitude: "))
         boat = Boat
         self._current_path = Path(start_latitude,start_longitude,end_latitude,end_longitude)
+
+    def run_isometric(self):
+        pass
