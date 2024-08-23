@@ -28,7 +28,9 @@ class Grib_Modifiers:
 
     def _update_folder_path(self):
         "Updates Folder Path to current time"
-        self._current_folder = f"C:\Users\Alex\Documents\Work\A-Levels-6th-Form\gribs\{datetime.date}\{datetime.time.hour}-{datetime.time.minute}-{datetime.time.second}"
+        current_datetime = datetime.datetime.now()
+        self._current_folder = f"..\gribs\{current_datetime.date}\{current_datetime.time.hour}-{current_datetime.time.minute}-{current_datetime.time.second}"
+        self._current_folder = rf"{self._current_folder}"
     
 
 class ECMWF_API(Grib_Modifiers):
@@ -60,3 +62,16 @@ class ECMWF_API(Grib_Modifiers):
         else:
             self._current_client.source = "ecmwf"
     
+if __name__ == "__main__":
+    client = Client()
+
+    current_datetime = datetime.datetime.now()
+    current_folder = f"..\gribs\{current_datetime.date}\{current_datetime.time.hour}-{current_datetime.time.minute}-{current_datetime.time.second}"
+    current_folder = rf"{current_folder}"
+
+    client.retrieve(
+        step=240,
+        type="fc",
+        param="msl",
+        target=current_folder,
+    )
