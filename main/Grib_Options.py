@@ -1,6 +1,7 @@
 from ecmwf.opendata import Client
 import datetime
 import os
+import eccodes
 
 BASECLIENT_PHYSICS = Client(
     source="ecmwf",
@@ -80,6 +81,23 @@ class ECMWF_API(Grib_Modifiers):
         else:
             self._current_client.source = "ecmwf"
     
+
+class GRIB:
+
+    def __init__(self, file_name:str) -> None:
+        """File_name includes the .grib,.grib2 or .grb extension"""
+        self._path = rf"../gribs/{file_name}"
+        self._data = {
+            "latitudes" :[],
+            "longitudes" :[],
+            "data":[]
+        }
+        self._datetime = None
+
+    def _data_digest(self):
+        pass
+        
+
 if __name__ == "__main__":
     client = Client()
 
