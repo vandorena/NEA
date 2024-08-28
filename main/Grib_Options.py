@@ -1,22 +1,7 @@
 from ecmwf.opendata import Client
 import datetime
 import os
-
-BASECLIENT_PHYSICS = Client(
-    source="ecmwf",
-    model="ifs",
-    resol="0p25",
-    preserve_request_order=False,
-    infer_stream_keyword=True,
-)
-
-BASECLIENT_DATA = Client(
-    source="ecmwf",
-    model="aifs",
-    resol="0p25",
-    preserve_request_order=False,
-    infer_stream_keyword=True,
-)
+import globals
 
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
@@ -41,7 +26,7 @@ class ECMWF_API(Grib_Modifiers):
 
     def __init__(self) -> None:
         super().__init__()
-        self._current_client = BASECLIENT_PHYSICS
+        self._current_client = globals.BASECLIENT_PHYSICS
         self._request = {
             "time": self._get_time(),
             "step": 48,
@@ -51,13 +36,13 @@ class ECMWF_API(Grib_Modifiers):
     def _change_client(self):
         """Accessor Method to Change the Current Client, no parameters"""
         if self._check_client == "DATA":
-            self._current_client = BASECLIENT_PHYSICS
+            self._current_client = globals.BASECLIENT_PHYSICS
         else:
-            self._current_client = BASECLIENT_DATA
+            self._current_client = globals.BASECLIENT_DATA
     
-    def check_client(self):
+    def _check_client(self):
         "Method to see the current client, returns 'DATA' or 'PHYSICS' relating to AIFS and IFS models respectively"
-        if self._current_client == BASECLIENT_DATA:
+        if self._current_client == globals.BASECLIENT_DATA:
             return "DATA"
         else:
             return "PHYSICS"
