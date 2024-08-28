@@ -2,7 +2,7 @@ import numpy as np
 import eccodes
 
 
-grib_file_name = '../gribs/test.grb'
+grib_file_name = r'../gribs/test.grib'
 
 
 def read_all_grib_messages(grib_file):
