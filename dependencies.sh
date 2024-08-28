@@ -1,7 +1,5 @@
 #!~/
 cd ~/
-
-
 sudo apt update
 sudo apt upgrade -y
 git clone https://github.com/ecmwf/ecbuild.git
@@ -41,5 +39,6 @@ pip3 install eccodes
 pip3 install numpy
 pip3 install bokeh
 pip3 install ecmwf.opendata
+pip3 install requests
 sudo apt update
 sudo apt upgrade -y
