@@ -1,10 +1,14 @@
 from bokeh.server.server import Server
 from mainpage import create_main_page
 from boats_bokeh import boats
+from new_boat_bokeh import new_boats
+from grib_manager_bokeh import gribs
 
 routes = {
     "/": create_main_page,
     "/boats": boats,
+    "/new_boat": new_boats,
+    "/grib_manager": gribs,
 }
 
 def make_document(doc, app):

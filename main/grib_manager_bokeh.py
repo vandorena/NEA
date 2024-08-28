@@ -12,6 +12,9 @@ def find_gribs():
                     new_folder_gribs.remove(new_folder_gribs[i])
             globals.CURRENT_SUBFOLDERS[grib_folder_list[i]] = new_folder_gribs
 
+def gribs(doc):
+    pass
+
 if __name__ == "__main__":
     find_gribs()
     print(globals.CURRENT_SUBFOLDERS)
