@@ -16,9 +16,17 @@ def find_boats():
         boat = None
 
 def boats(doc):
+    """Need to work on how to dynamically create buttons based on how many boats are there."""
     find_boats()
+    
+
+
     add_boat = Button(label="Add a New Boat",button_type=BUTTON_STYLE["type"][0],width=BUTTON_STYLE["width"],height=BUTTON_STYLE["height"],icon=BUTTON_STYLE["icons"][0])
     add_boat.js_on_event('button_click',CustomJS(code="window.location.href='/new_boat"))
+
+    for i in range(0,len(CURRENT_BOATS["boat_list"])):
+        pass
+    
 
 
 if __name__ == "__main__":

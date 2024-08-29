@@ -5,6 +5,7 @@ NETWORK_STATUS = False
 CURRENT_BOATS = {
     "boat_list":[]
     }
+selected_boat = "none"
 CURRENT_TIME = datetime.datetime.now()
 CURRENT_SUBFOLDERS ={
     "subfolder_list":[]
