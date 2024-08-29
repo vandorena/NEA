@@ -5,7 +5,7 @@ from bokeh.layouts import row, column
 from bokeh.models import CustomJS
 
 def find_boats():
-    with open("..\Boats\Boat_saves.txt","r") as file:
+    with open(r"..\Boats\Boat_saves.txt","r") as file:
         boats = file.readlines()
     for i in range(0,len(boats)):
         line_content = boats[i].split()
@@ -26,6 +26,9 @@ def boats(doc):
 
     for i in range(0,len(CURRENT_BOATS["boat_list"])):
         pass
+
+    layout = row(add_boat)
+    doc.add_root(layout)
     
 
 
