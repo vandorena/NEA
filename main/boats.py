@@ -10,6 +10,9 @@ class Boat:
         }
 
     def add_polar(self,filename:str):
+        """
+        Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
+        """
         with open(filename,"r") as file:
             line_array = file.readlines()
         wind_speeds = []
