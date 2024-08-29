@@ -3,12 +3,14 @@ from mainpage import create_main_page
 from boats_bokeh import boats
 from new_boat_bokeh import new_boats
 from grib_manager_bokeh import gribs
+from boat_view_bokeh import view_boat
 
 routes = {
     "/": create_main_page,
     "/boats": boats,
     "/new_boat": new_boats,
     "/grib_manager": gribs,
+    "/view_boat": view_boat,
 }
 
 def make_document(doc, app):

@@ -1,15 +1,23 @@
 from globals import CURRENT_BOATS, SELECTED_BOAT, BUTTON_STYLE
 import bokeh
-from bokeh.models import Button,Div,CustomJS
+from bokeh.layouts import row,column
+from bokeh.models import Button,Div,CustomJS,ColumnDataSource, DataTable, DateFormatter, TableColumn
 
 def check_boat(doc,boat: str):
     boat_object = CURRENT_BOATS[SELECTED_BOAT]
     
-
-
+    source = ColumnDataSource(boat_object.data)
+    columns = []
+    columns.append(TableColumn(field=boat_object.data["heading_list"], title = "Headings (degrees to true wind)"))
+    for i in range(0,len(boat_object.data["wind_list"])):
+        columns.append(TableColumn(field=boat_object.data[boat_object.data["wind_list"][i]],title=f"{boat_object.data["wind_list"]}knts"))
+    table = DataTable(source=source,columns=columns)
+    
     back_boats_button = Button(label="Boats Page",button_type=BUTTON_STYLE["type"][0],width=BUTTON_STYLE["width"],height=BUTTON_STYLE["height"],icon=BUTTON_STYLE["icons"][0])
-
     back_boats_button.js_on_event('button_click',CustomJS(code="window.location.href='/boats"))
+
+    layout = row(table,back_boats_button)
+    doc.add_root(layout)
 
 def view_boat(doc):
     if SELECTED_BOAT == None:
