@@ -42,5 +42,5 @@ if __name__ == "__main__":
         type="fc",
         param="msl",
         infer_stream_keyword=True,
-        target="gribs\data.grib2",
+        target="gribs/data.grib2",
     )
