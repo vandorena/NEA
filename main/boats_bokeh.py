@@ -3,6 +3,7 @@ from globals import CURRENT_BOATS, BUTTON_STYLE, selected_boat
 from bokeh.models import Button
 from bokeh.layouts import row, column
 from bokeh.models import CustomJS
+from bokeh.io import curdoc
 
 def find_boats():
     with open(r"..\Boats\Boat_saves.txt","r") as file:
@@ -60,3 +61,5 @@ def boats(doc):
 
 if __name__ == "__main__":
     find_boats()
+    curdoc().clear
+    boats(curdoc())
