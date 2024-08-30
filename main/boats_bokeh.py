@@ -6,6 +6,7 @@ from bokeh.models import CustomJS
 from bokeh.io import curdoc
 
 def find_boats():
+    global CURRENT_BOATS
     with open(r"..\Boats\Boat_saves.txt","r") as file:
         boats = file.readlines()
     for i in range(0,len(boats)):
@@ -17,24 +18,34 @@ def find_boats():
         boat = None
 
 def boat_button(boat):
+    global selected_boat 
     selected_boat = boat
-    CustomJS(code="window.location.href='/view_boat")
+    return CustomJS(code="window.location.href='/view_boat'")
 
 
 def boats(doc):
+    global CURRENT_BOATS,BUTTON_STYLE
     """Need to work on how to dynamically create buttons based on how many boats are there."""
     find_boats()
     
 
 
-    add_boat = Button(label="Add a New Boat",button_type=BUTTON_STYLE["type"][0],width=BUTTON_STYLE["width"],height=BUTTON_STYLE["height"],icon=BUTTON_STYLE["icons"][0])
-    add_boat.js_on_event('button_click',CustomJS(code="window.location.href='/new_boat"))
+    add_boat = Button(
+        label="Add a New Boat",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    add_boat.js_on_event('button_click',CustomJS(code="window.location.href='/new_boat'"))
 
     button_list = [add_boat]
     for i in range(0,len(CURRENT_BOATS["boat_list"])):
-        button = Button(label=CURRENT_BOATS["boat_list"][i])
-        button.on_event("click",boat_button(CURRENT_BOATS["boat_list"][i]))
+        boat_name = CURRENT_BOATS["boat_list"][i]
+        button = Button(label=boat_name)
+        button.js_on_event("button_click",boat_button(boat_name))
         button_list.append(button)
+
     length_button_list = len(button_list)
 
     row1=[]
@@ -59,7 +70,7 @@ def boats(doc):
     
 
 
-if __name__ == "__main__":
-    find_boats()
-    curdoc().clear
-    boats(curdoc())
+
+find_boats()
+curdoc().clear()
+boats(curdoc())
