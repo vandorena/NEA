@@ -71,6 +71,6 @@ def boats(doc):
 
 
 
-find_boats()
-curdoc().clear()
-boats(curdoc())
+#find_boats()
+##curdoc().clear()
+#boats(curdoc())

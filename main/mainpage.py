@@ -14,8 +14,7 @@ def check_network_status():
 
 def create_main_page(doc):
     button_boats = Button(label="Boats Page",button_type=BUTTON_STYLE["type"][0],width=BUTTON_STYLE["width"],height=BUTTON_STYLE["height"],icon=BUTTON_STYLE["icons"][0])
-
-    button_boats.js_on_event('button_click',CustomJS(code="window.location.href='/boats"))
+    button_boats.js_on_event('button_click',CustomJS(code="window.location.href='/boats'"))
 
     layout = row(button_boats)
     doc.add_root(layout)
