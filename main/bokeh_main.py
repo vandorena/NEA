@@ -17,7 +17,7 @@ def make_document(doc, app):
     app(doc)
     doc.title = "Weather Routing"
 
-def main():
+def main(): #Not my function - need to work on implementing my own version
     server = Server(
         {route: (lambda doc, app=app: make_document(doc, app)) for route, app in routes.items()},
         num_procs=1
@@ -26,5 +26,9 @@ def main():
     server.io_loop.add_callback(server.show, "/")
     server.io_loop.start()
 
+def mainv2():
+    server = Server()
+
+    
 if __name__ == "__main__":
     main()
