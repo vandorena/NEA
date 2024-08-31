@@ -1,11 +1,12 @@
 import os,datetime
-from globals import CURRENT_TIME,CURRENT_SUBFOLDERS
+from globals import CURRENT_TIME,CURRENT_SUBFOLDERS,selected_grib
 from bokeh.models import Button,CustomJS
 from bokeh.layouts import row, column
+from bokeh.io import curdoc
 
 def find_gribs():
     global CURRENT_TIME,CURRENT_SUBFOLDERS
-    grib_folder_list = os.listdir("gribs")
+    grib_folder_list = os.listdir("..//gribs")
     for i in range(0,len(grib_folder_list)):
         if grib_folder_list[i][:5] == f"{CURRENT_TIME.year}-" and grib_folder_list[i][7] == "-":
             CURRENT_SUBFOLDERS["subfolder_list"].append(grib_folder_list[i])
@@ -16,7 +17,10 @@ def find_gribs():
             CURRENT_SUBFOLDERS[grib_folder_list[i]] = new_folder_gribs
 
 def grib_button(grib_name):
-    pass
+    global selected_grib
+    selected_grib = grib_name
+    return CustomJS(code="window.location.href='/view_grib'")
+# view_grib yet to be made
 
 def gribs(doc):
     global CURRENT_SUBFOLDERS
@@ -50,6 +54,9 @@ def gribs(doc):
 
     doc.add_root(layout)
 
+find_gribs()
+gribs(curdoc())
+
 if __name__ == "__main__":
     find_gribs()
-    print(globals.CURRENT_SUBFOLDERS)
+    print(CURRENT_SUBFOLDERS)

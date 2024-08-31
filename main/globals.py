@@ -6,6 +6,7 @@ CURRENT_BOATS = {
     "boat_list":[]
     }
 selected_boat = "none"
+selected_grib = "none"
 CURRENT_TIME = datetime.datetime.now()
 CURRENT_SUBFOLDERS ={
     "subfolder_list":[]
