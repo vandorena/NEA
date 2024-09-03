@@ -1,9 +1,10 @@
 from globals import CURRENT_BOATS, selected_boat, BUTTON_STYLE
 import bokeh
+from bokeh.io import curdoc
 from bokeh.layouts import row,column
 from bokeh.models import Button,Div,CustomJS,ColumnDataSource, DataTable, DateFormatter, TableColumn
 
-def check_boat(doc,boat: str):
+def check_boat(doc):
     boat_object = CURRENT_BOATS[selected_boat]
     
     source = ColumnDataSource(boat_object.data)
@@ -24,3 +25,5 @@ def view_boat(doc):
         CustomJS(code="window.location.href='/boats")
     else:
         check_boat(doc,selected_boat)
+
+check_boat(curdoc())
