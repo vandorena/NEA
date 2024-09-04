@@ -5,6 +5,7 @@ from globals import selected_boat,selected_grib,BUTTON_STYLE,CURRENT_BOATS,CURRE
 from bokeh.layouts import column,row
 from boats_bokeh import find_boats
 from grib_manager_bokeh import find_gribs
+from bokeh.events import MenuItemClick
 
 def main(doc):
     infinite_while = False
@@ -62,11 +63,20 @@ def pre(doc):
         )
     
     grib_dropdown = Dropdown(label="Select Grib",style="default",menu=create_menu_gribs())
+    grib_dropdown.on_event(MenuItemClick,update_grib_selected)
     
     boat_dropdown = Dropdown(label="Select Boat",style="default",menu=create_menu_boats())
 
     navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
     right_column = column(navigation_buttons,start_routing_button)
+
+def update_grib_selected(event):
+    global selected_grib
+    selected_grib = event.item
+
+def update_boats_selected(event):
+    global selected_boat
+    selected_boat = event.item
 
 def create_menu_boats():
     find_boats()
