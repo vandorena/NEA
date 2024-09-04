@@ -1,8 +1,10 @@
 import bokeh
 from bokeh.io import curdoc
-from bokeh.models import Button, Div
-from globals import selected_boat,selected_grib,BUTTON_STYLE
+from bokeh.models import Button, Div, Dropdown
+from globals import selected_boat,selected_grib,BUTTON_STYLE,CURRENT_BOATS,CURRENT_SUBFOLDERS
 from bokeh.layouts import column,row
+from boats_bokeh import find_boats
+from grib_manager_bokeh import find_gribs
 
 def main(doc):
     infinite_while = False
@@ -22,7 +24,7 @@ def post(doc):
 
     
     
-    right_column = 
+    right_column = ()
 
 
 
@@ -59,5 +61,25 @@ def pre(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
+    grib_dropdown = Dropdown(label="Select Grib",style="default",menu=create_menu_gribs())
+    
+    boat_dropdown = Dropdown(label="Select Boat",style="default",menu=create_menu_boats())
+
     navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
-    right_column = column(start_routing_button)
+    right_column = column(navigation_buttons,start_routing_button)
+
+def create_menu_boats():
+    find_boats()
+    menu = []
+    for i in range(0, len(CURRENT_BOATS["boat_list"])):
+        tuple_add = (CURRENT_BOATS["boat_list"][i],CURRENT_BOATS["boat_list"][i])
+        menu.append(tuple_add)
+    return menu
+
+def create_menu_gribs():
+    find_gribs()
+    menu = []
+    for i in range(0, len(CURRENT_SUBFOLDERS["subfolder_list"])):
+        tuple_add = (CURRENT_SUBFOLDERS["subfolder_list"][i],CURRENT_SUBFOLDERS["subfolder_list"][i])
+        menu.append(tuple_add)
+    return menu
