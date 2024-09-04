@@ -66,9 +66,10 @@ def pre(doc):
     grib_dropdown.on_event(MenuItemClick,update_grib_selected)
     
     boat_dropdown = Dropdown(label="Select Boat",style="default",menu=create_menu_boats())
+    boat_dropdown.on_event(MenuItemClick,update_boats_selected)
 
     navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
-    right_column = column(navigation_buttons,start_routing_button)
+    right_column = column(navigation_buttons,boat_dropdown,grib_dropdown,start_routing_button)
 
 def update_grib_selected(event):
     global selected_grib
