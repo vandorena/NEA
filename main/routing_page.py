@@ -34,4 +34,30 @@ def pre(doc):
         height=BUTTON_STYLE["height"],
         icon=BUTTON_STYLE["icons"][0]
         )
+    
+    grib_page_button = Button(
+        label="Grib Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    boat_page_button = Button(
+        label="Boat Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    main_page_button = Button(
+        label="Main Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
     right_column = column(start_routing_button)
