@@ -7,9 +7,11 @@ from boats_bokeh import find_boats
 from grib_manager_bokeh import find_gribs
 from bokeh.events import MenuItemClick
 
+routing_started = False
+
 def main(doc):
+    global routing_started
     infinite_while = False
-    routing_started = False
     while not infinite_while:
         if routing_started == True:
             post(doc)
