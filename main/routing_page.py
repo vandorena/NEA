@@ -1,6 +1,6 @@
 import bokeh
 from bokeh.io import curdoc
-from bokeh.models import Button, Div, Dropdown
+from bokeh.models import Button, Div, Dropdown, Paragraph
 from globals import selected_boat,selected_grib,BUTTON_STYLE,CURRENT_BOATS,CURRENT_SUBFOLDERS
 from bokeh.layouts import column,row
 from boats_bokeh import find_boats
@@ -68,8 +68,10 @@ def pre(doc):
     boat_dropdown = Dropdown(label="Select Boat",style="default",menu=create_menu_boats())
     boat_dropdown.on_event(MenuItemClick,update_boats_selected)
 
+    para = Paragraph("<h1>Route Information</h1><br><h2>No Route Selected</h2>")
+
     navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
-    right_column = column(navigation_buttons,boat_dropdown,grib_dropdown,start_routing_button)
+    right_column = column(navigation_buttons,boat_dropdown,grib_dropdown,start_routing_button,para)
 
 def update_grib_selected(event):
     global selected_grib
