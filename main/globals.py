@@ -5,6 +5,7 @@ NETWORK_STATUS = False
 CURRENT_ROUTINGS = {
     "routing_list:[]"
 }
+# Routings are Path objects
 CURRENT_BOATS = {
     "boat_list":[]
     }

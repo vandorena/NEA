@@ -25,7 +25,9 @@ def post(doc):
     boat_Div = Div(text=f"<p><b>{selected_boat}</p></b>")
     grib_Div = Div(test=f"<p><b>{selected_grib}</p></b>")
 
-    datetime_slider = DatetimeRangeSlider(start=)
+    current_routing = CURRENT_ROUTINGS[CURRENT_ROUTINGS["routing_list"][-1]]
+
+    datetime_slider = DatetimeRangeSlider(start=current_routing.start_datetime,end=current_routing.path_data["times"][-1])
 
     
     navigation_buttons = create_navigation_buttons()

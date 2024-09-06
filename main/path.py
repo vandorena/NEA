@@ -59,14 +59,11 @@ class Path:
         
     def log(self,data_array: list):
         """Expects a list of 12 values.
-        lat, lon, time:datetime, speed, windspeed,wind_direction, wave_height, wave_direction, air_pressure, current_direction, current_speed"""
+        lat, lon, time:datetime, assumes time is realtime not timedelta, speed, windspeed,wind_direction, wave_height, wave_direction, air_pressure, current_direction, current_speed"""
         if len(data_array) == len(self.path_data_names):
             for i in range(0,len(self.path_data_names)):
                 current_value = self.path_data_names[i]
-                if current_value == "times":
-                    self.path_data[current_value].append(data_array[i]+self.start_time)
-                else:
-                    self.path_data[current_value].append(data_array[i])
+                self.path_data[current_value].append(data_array[i])
         else:
             raise LogArrayLengthException
         

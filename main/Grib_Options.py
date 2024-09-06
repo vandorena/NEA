@@ -74,6 +74,7 @@ class GRIB:
         self._data = {
             "latitudes" :[],
             "longitudes" :[],
+            "times":[],
             "data":[]
         }
         self._datetime = None
