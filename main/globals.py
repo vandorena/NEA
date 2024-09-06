@@ -2,6 +2,9 @@ import datetime
 from ecmwf.opendata import Client
 
 NETWORK_STATUS = False
+CURRENT_ROUTINGS = {
+    "routing_list:[]"
+}
 CURRENT_BOATS = {
     "boat_list":[]
     }

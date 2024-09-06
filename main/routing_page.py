@@ -1,7 +1,7 @@
 import bokeh
 from bokeh.io import curdoc
-from bokeh.models import Button, Div, Dropdown, Paragraph
-from globals import selected_boat,selected_grib,BUTTON_STYLE,CURRENT_BOATS,CURRENT_SUBFOLDERS
+from bokeh.models import Button, Div, Dropdown, Paragraph, DatetimeRangeSlider
+from globals import selected_boat,selected_grib,BUTTON_STYLE,CURRENT_BOATS,CURRENT_SUBFOLDERS, CURRENT_ROUTINGS
 from bokeh.layouts import column,row
 from boats_bokeh import find_boats
 from grib_manager_bokeh import find_gribs
@@ -21,13 +21,15 @@ def main(doc):
 
 
 def post(doc):
-    global selected_boat
+    global selected_boat,CURRENT_ROUTINGS
     boat_Div = Div(text=f"<p><b>{selected_boat}</p></b>")
     grib_Div = Div(test=f"<p><b>{selected_grib}</p></b>")
 
+    datetime_slider = DatetimeRangeSlider(start=)
+
     
-    
-    right_column = ()
+    navigation_buttons = create_navigation_buttons()
+    right_column = (navigation_buttons,boat_Div,grib_Div)
 
 
 
@@ -40,29 +42,6 @@ def pre(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
-    grib_page_button = Button(
-        label="Grib Page",
-        button_type=BUTTON_STYLE["type"][0],
-        width=BUTTON_STYLE["width"],
-        height=BUTTON_STYLE["height"],
-        icon=BUTTON_STYLE["icons"][0]
-        )
-    
-    boat_page_button = Button(
-        label="Boat Page",
-        button_type=BUTTON_STYLE["type"][0],
-        width=BUTTON_STYLE["width"],
-        height=BUTTON_STYLE["height"],
-        icon=BUTTON_STYLE["icons"][0]
-        )
-    
-    main_page_button = Button(
-        label="Main Page",
-        button_type=BUTTON_STYLE["type"][0],
-        width=BUTTON_STYLE["width"],
-        height=BUTTON_STYLE["height"],
-        icon=BUTTON_STYLE["icons"][0]
-        )
     
     grib_dropdown = Dropdown(label="Select Grib",style="default",menu=create_menu_gribs())
     grib_dropdown.on_event(MenuItemClick,update_grib_selected)
@@ -72,7 +51,7 @@ def pre(doc):
 
     para = Paragraph("<h1>Route Information</h1><br><h2>No Route Selected</h2>")
 
-    navigation_buttons = row(grib_page_button,boat_page_button,main_page_button)
+    navigation_buttons = create_navigation_buttons()
     right_column = column(navigation_buttons,boat_dropdown,grib_dropdown,start_routing_button,para)
 
 def update_grib_selected(event):
@@ -98,3 +77,32 @@ def create_menu_gribs():
         tuple_add = (CURRENT_SUBFOLDERS["subfolder_list"][i],CURRENT_SUBFOLDERS["subfolder_list"][i])
         menu.append(tuple_add)
     return menu
+
+def create_navigation_buttons():
+    grib_page_button = Button(
+        label="Grib Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    boat_page_button = Button(
+        label="Boat Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    main_page_button = Button(
+        label="Main Page",
+        button_type=BUTTON_STYLE["type"][0],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    nav = row(grib_page_button,boat_page_button,main_page_button)
+
+    return nav
