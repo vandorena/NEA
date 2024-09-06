@@ -4,6 +4,9 @@ from datetime import date,datetime
 class LogArrayLengthException(Exception):
     """Error Raised as Array given to log function, is not of same dimensions as the Path's data"""
 
+class NotInRouting(Exception):
+    """Raised when a searched for Item is not included in the Routing"""
+
 class StringSlicingFailureforPathClass(Exception):
     """Error raised when there is a indexerror in the string slice"""
 class Path:
@@ -73,7 +76,15 @@ class Path:
     def _find_index_times(self,time)->int:
         if time in self.path_data["times"]:
             return self.path_data["times"].index(time)
-
+        else:
+            if time > self.path_data["times"][-1]:
+                raise NotInRouting("Time after routing finished")
+            elif time < self.start_time:
+                raise NotInRouting("Time before Routing Start Time")
+            else:
+                for i in range(1,len(self.path_data["times"])):
+                    if time > self.path_data["times"][i-1] and time < self.path_data["times"][i]:
+                        return self.path_data["times"][i]
     
     def _find_index_matcher_list(self,lat,lon) -> list:
         """Assumes both in self.path_data
@@ -84,7 +95,6 @@ class Path:
         current_lon_list = self.path_data["lon"]
         lat_index = []
         lon_index = []
-        match_index = []
         while lat_elements_to_check != 0:
             held_index = current_lat_list.index(lat)
             lat_index.append(held_index)
