@@ -2,6 +2,13 @@ import datetime
 from ecmwf.opendata import Client
 
 NETWORK_STATUS = False
+SETTINGS = {
+    "setting_list" : [],
+    "number_of _points":1000,
+    "maximum_wind_speed": 30, #in knots
+    "maximum_wave_height": 10, #in meters
+    "maximum_distance_from_centerline" : 5 #in degrees
+    }
 CURRENT_ROUTINGS = {
     "routing_list:[]"
 }
@@ -30,6 +37,8 @@ BASECLIENT_PHYSICS = Client(
     infer_stream_keyword=True,
 )
 ICON_LIST=[None]
+mapwidth = 500
+mapheight = 500
 BUTTON_STYLE ={
     "width":500,
     "height":100,
