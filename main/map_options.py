@@ -13,5 +13,6 @@ class Map_methods:
         return x,y
 
     def mercator_lat_lon(x,y)->tuple:
-
+        lon = math.degrees(x/mapwidth * 2 * math.pi)
+        lat = "n/a"
         return lat,lon
