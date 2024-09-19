@@ -40,7 +40,7 @@ if __name__ == "__main__":
         model="ifs",
         step=240,
         type="fc",
-        param="msl",
+        param="ws",
         infer_stream_keyword=True,
         target="..\gribs\data.grib2",
     )

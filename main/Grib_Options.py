@@ -2,13 +2,13 @@ from ecmwf.opendata import Client
 import datetime
 import os
 import globals
+from eccodes import codes_grib_new_from_file, codes_get_values, codes_get, codes_release
 
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
 
     def __init__(self) -> None:
         self._current_client = None
-        self._current_address = None
         self._current_folder = None
         self._update_folder_path()
         self._request = None
@@ -57,6 +57,17 @@ class ECMWF_API(Grib_Modifiers):
             return "12"
         else:
             return "18"
+        
+    def make_request(self):
+        self._update_folder_path()
+        client = self._current_client
+        client.retrieve(
+            source=f"{self._current_client.source}",
+            model=f"{self._current_client.model}",
+            type = "fc",
+            param=["ws"],
+            target=self._current_folder
+        )
 
     def change_source(self):
         """Method to change the request server, from ecmwf to azure, and vice versa"""
@@ -70,14 +81,30 @@ class GRIB:
 
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
-        self._path = rf"../gribs/{file_name}"
+        self._path = rf"gribs/{file_name}"
         self._data = {
             "latitudes" :[],
             "longitudes" :[],
             "times":[],
             "data":[]
         }
+        self._data_list = None
         self._datetime = None
+
+    def read_all(self):
+        with open(self._path, 'rb') as file:
+            big_list = []
+            end_file = False
+
+            while not end_file:
+
+                current_message = codes_grib_new_from_file(file)
+                
+                if current_message == None:
+                    end_file = True
+            # TBC
+
+
 
     def _data_digest(self):
         pass
