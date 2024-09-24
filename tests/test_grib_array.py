@@ -41,16 +41,16 @@ def read_single_message(grin_file):
     with open(grin_file, "rb") as file:
 
         current_message = eccodes.codes_grib_new_from_file(file)
-        #print(eccodes.codes_get_values(current_message))
+        print(eccodes.codes_get_values(current_message))
         #print(eccodes.codes_get(current_message,'Nj'))
-        #print(eccodes.codes_get(current_message, 'date'))
-        #print(eccodes.codes_get(current_message,"time"))
+        print(type(eccodes.codes_get(current_message, 'date')))
+        print(eccodes.codes_get(current_message,"time"))
         #print(eccodes.codes_get(current_message,"typeOfGrid"))
         #print(eccodes.codes_get(current_message,"latitudeOfFirstGridPointInDegrees"))
         #print(eccodes.codes_get(current_message,"significanceOfReferenceTime"))
         #print(eccodes.codes_get(current_message,"gribLs"))
         #print(eccodes.codes_get(current_message,"topLevel"))
-        print(eccodes.codes_get(current_message,"ws"))
+        #print(eccodes.codes_get(current_message,"w"))
         return
     
 #print(f"{read_single_message(grib_file_name)}")

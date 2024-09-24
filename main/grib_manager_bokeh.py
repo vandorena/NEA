@@ -22,6 +22,7 @@ def grib_button(grib_name):
     return CustomJS(code="window.location.href='/view_grib'")
 # view_grib yet to be made
 
+
 def gribs(doc):
     global CURRENT_SUBFOLDERS
     

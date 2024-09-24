@@ -66,7 +66,8 @@ class ECMWF_API(Grib_Modifiers):
             model=f"{self._current_client.model}",
             type = "fc",
             param=["ws"],
-            target=self._current_folder
+            target=self._current_folder,
+            infer_stream_keyword=True,
         )
 
     def change_source(self):

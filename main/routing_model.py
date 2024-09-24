@@ -16,4 +16,4 @@ class Routing_Model:
         self._current_path = Path(start_latitude,start_longitude,end_latitude,end_longitude)
 
     def run_isometric(self):
-        
+        pass
