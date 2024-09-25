@@ -4,6 +4,9 @@ import os
 import globals
 from eccodes import codes_grib_new_from_file, codes_get_values, codes_get, codes_release
 
+class Incompatible_Grid_Type(Exception):
+    """"Exception relating to the type of Grid, raised if the type of Grid used by the Grib message is not 'regular_ll' """
+
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
 
@@ -65,7 +68,7 @@ class ECMWF_API(Grib_Modifiers):
             source=f"{self._current_client.source}",
             model=f"{self._current_client.model}",
             type = "fc",
-            param=["ws"],
+            param=["ws","u","v",""],
             target=self._current_folder,
             infer_stream_keyword=True,
         )
@@ -92,7 +95,36 @@ class GRIB:
         self._data_list = None
         self._datetime = None
 
+    def create_distributed_array(self,number_of_points: int,first_point: int,last_point: int)->list:
+        step = (last_point - first_point)/number_of_points
+        points = [first_point]
+        while points[-1] < last_point:
+            new_point = points[-1] + step
+            points.append()
+            if points[-1] >= last_point:
+                break
+        return points
+
+    def create_grid(self):
+
+        with open(self._path, "rb") as file:
+            current_message = codes_grib_new_from_file(file)
+            gridtype = codes_get(current_message,"typeOfGrid")
+            if gridtype != "regular_ll":
+                raise Incompatible_Grid_Type("Incompatible Grid Type")
+            else:
+                number_of_longitudes = codes_get(current_message,"Ni")
+                number_of_latitudes = codes_get(current_message,"Nj")
+                first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
+                last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
+                first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
+                last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
+                self._data["latitudes"] = self.create_distributed_array(number_of_latitudes,first_lat,last_lat)
+                self._data["longitudes"] = self.create_distributed_array(number_of_longitudes,first_long,last_long)
+            file.close()
+
     def read_all(self):
+        self.create_grid
         with open(self._path, 'rb') as file:
             big_list = []
             end_file = False
@@ -103,7 +135,7 @@ class GRIB:
                 
                 if current_message == None:
                     end_file = True
-            # TBC
+            file.close()
 
 
 

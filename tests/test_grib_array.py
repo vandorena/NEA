@@ -2,7 +2,7 @@ import numpy as np
 import eccodes
 
 
-grib_file_name = r"gribs/test.grib"
+grib_file_name = r"gribs/thefrib.grib2"
 
 
 def read_all_grib_messages(grib_file):
@@ -42,15 +42,17 @@ def read_single_message(grin_file):
 
         current_message = eccodes.codes_grib_new_from_file(file)
         print(eccodes.codes_get_values(current_message))
-        #print(eccodes.codes_get(current_message,'Nj'))
-        print(type(eccodes.codes_get(current_message, 'date')))
+        print(eccodes.codes_get(current_message,'Ni'))
+        print(eccodes.codes_get(current_message, 'date'))
         print(eccodes.codes_get(current_message,"time"))
-        #print(eccodes.codes_get(current_message,"typeOfGrid"))
-        #print(eccodes.codes_get(current_message,"latitudeOfFirstGridPointInDegrees"))
+        #print(eccodes.codes_get_values(current_message)[0:100])
+        print(type(eccodes.codes_get(current_message,"typeOfGrid")))
+        print(eccodes.codes_get(current_message,"latitudeOfLastGridPointInDegrees"))
         #print(eccodes.codes_get(current_message,"significanceOfReferenceTime"))
         #print(eccodes.codes_get(current_message,"gribLs"))
         #print(eccodes.codes_get(current_message,"topLevel"))
         #print(eccodes.codes_get(current_message,"w"))
+        #print(eccodes.codes_get(current_message, "levels"))
         return
     
 #print(f"{read_single_message(grib_file_name)}")

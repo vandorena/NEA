@@ -40,10 +40,8 @@ if __name__ == "__main__":
         model="ifs",
         step=240,
         type="fc",
-        stream = "wave",
-        param = ["mwd","swh"],
-        stream = "oper",
+        stream =  "oper",
         param = ["u","v"],
         levellist =1000,
-        target="..\gribs\data.grib2",
+        target=r"gribs/thefrib.grib2",
     )
