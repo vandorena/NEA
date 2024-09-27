@@ -138,7 +138,6 @@ class GRIB:
                 last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
                 self._data["latitudes"] = self._create_distributed_array(number_of_latitudes,first_lat,last_lat)
                 self._data["longitudes"] = self._create_distributed_array(number_of_longitudes,first_long,last_long)
-            file.close()
 
     
     def _read_all(self):
@@ -158,18 +157,16 @@ class GRIB:
                     date = codes_get(current_message,"date")
                     time = codes_get(current_message,"time")
                     if codes_get(current_message,"bottomLevel") == codes_get(current_message,"topLevel"):
-                        values.append(codes_get(current_message,"bottomLevel"))
+                        values = np.append(values, codes_get(current_message,"bottomLevel"))
                     else:
                         raise Incompatible_level_information("Message has multiple Levels")
-                    values.append(time)
-                    values.append(date)
-                    values.append(name)
+                    values = np.append(values, [time, date, name])
                     big_list.append(values)
                 except Exception:
                     file.close()
                     raise Bad_Grib("Grib is corrupt")
             
-            file.close()
+            
         self._data_digest(big_list)
         
 
@@ -198,8 +195,8 @@ class GRIB:
 
 
     def _data_digest(self,big_list:list):
-        for i in range(0,len(big_list)):
-            self._digest_per_values(big_list[i])
+        for values in big_list:
+            self._digest_per_values(values)
         print(self._data["short_name_list"])
         print(self._data["index"])
         
