@@ -170,16 +170,22 @@ class GRIB:
         self._data_digest(big_list)
         
 
-    def _reshape_array(self,values: list):
+    def _reshape_array(self,values: np.ndarray):
         nj = len(self._data["latitudes"])
         ni = len(self._data["longitudes"])
+        expected_size = nj*ni
+        
+        if values.size != expected_size:
+            raise(ValueError(f"Cannot reshape an array of {values.size} into shape({nj},{ni})"))
         return np.reshape(values,(nj,ni))
         
-    def _digest_per_values(self,values:list):
-        short_name = values.pop()
-        date = values.pop()
-        time = values.pop()
-        level = values.pop()
+    def _digest_per_values(self,values:np.ndarray):
+        short_name = values[-1]
+        date = values[-2]
+        time = values[-3]
+        level = values[-4]
+        values = values[:-4]
+
         if short_name not in self._data["short_name_list"]:
             self._data["short_name_list"].append(short_name)
         if level not in self._data["level_list"]:
