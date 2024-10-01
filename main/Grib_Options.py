@@ -92,7 +92,7 @@ class GRIB:
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._path = os.path.join("gribs",file_name)
-        # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies/
+        # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
         self._path_ok = True
         if not os.path.exists(self._path):
             self._path_ok = False
@@ -169,6 +169,29 @@ class GRIB:
             
             
         self._data_digest(big_list)
+
+    def _find_closest_lat(self,lat:float)->int:
+        """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
+        if lat in self._data["latitudes"]:
+            return self._data["latitudes"].index(lat)
+        else:
+            for i in range(1,len(self._data["latitudes"])):
+                if self._data["latitudes"][i-1] < lat and self._data["latitudes"][i] > lat:
+                    return i
+
+    def _find_closest_lon(self,lat:float)->int:
+        """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
+        if lat in self._data["longitudes"]:
+            return self._data["longitudes"].index(lat)
+        else:
+            for i in range(1,len(self._data["longitudes"])):
+                if self._data["longitudes"][i-1] < lat and self._data["longitudes"][i] > lat
+                    return i
+
+
+    def read_point(self,lat:float,lon:float) -> list:
+        pass
+
         
 
     def _reshape_array(self,values: np.ndarray):
