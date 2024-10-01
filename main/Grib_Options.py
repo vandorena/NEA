@@ -92,6 +92,7 @@ class GRIB:
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._path = os.path.join("gribs",file_name)
+        # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies/
         self._path_ok = True
         if not os.path.exists(self._path):
             self._path_ok = False
