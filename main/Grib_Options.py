@@ -14,6 +14,8 @@ class Incompatible_Grid_Type(Bad_Grib):
 class Incompatible_level_information(Bad_Grib):
     """Exception for gribs containing messages with multiple levels"""
 
+class Point_not_in_weather_values(Bad_Grib):
+    """Exception for a ._data weather value having an incomplete set of a data when being read"""
 
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
@@ -170,7 +172,7 @@ class GRIB:
             
         self._data_digest(big_list)
 
-    def _find_closest_lat(self,lat:float)->int:
+    def _find_closest_lat(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
         if lat in self._data["latitudes"]:
             return self._data["latitudes"].index(lat)
@@ -179,18 +181,31 @@ class GRIB:
                 if self._data["latitudes"][i-1] < lat and self._data["latitudes"][i] > lat:
                     return i
 
-    def _find_closest_lon(self,lat:float)->int:
-        """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
+    def _find_closest_lon(self,lat:float)->float:
+        """Assumes list is sorted, and assumes will be in list range, and assumes list exists returns index"""
         if lat in self._data["longitudes"]:
             return self._data["longitudes"].index(lat)
         else:
             for i in range(1,len(self._data["longitudes"])):
-                if self._data["longitudes"][i-1] < lat and self._data["longitudes"][i] > lat
+                if self._data["longitudes"][i-1] < lat and self._data["longitudes"][i] > lat:
                     return i
 
 
-    def read_point(self,lat:float,lon:float) -> list:
-        pass
+    def read_point_weather(self, index, lat:float,lon:float,) -> dict:
+        """expect self._data values to be npndarrays 2d"""
+        lattitude = self._find_closest_lat(lat)
+        longitude = self._find_closest_lon(lon)
+        point_data_dict = {
+            "index":[],
+            }
+        for i in range(0,len(self._data["index"])):
+            if self._data[self._data["index"][i]][lattitude,longitude] != None:
+                point_data_dict[self._data["index"][i]] = self._data[self._data["index"][i]][lattitude,longitude]
+                point_data_dict["index"].append(self._data["index"][i])
+            else:
+                raise Point_not_in_weather_values(f"The point at {lattitude},{longitude} index was not found in {self._data["index"][i]}")
+        return point_data_dict
+
 
         
 
