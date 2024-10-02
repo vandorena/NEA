@@ -17,6 +17,9 @@ class Incompatible_level_information(Bad_Grib):
 class Point_not_in_weather_values(Bad_Grib):
     """Exception for a ._data weather value having an incomplete set of a data when being read"""
 
+class Invalid_grib_extension(Bad_Grib):
+    """Exception for a filename with an incompatible file extension"""
+
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
 
@@ -93,27 +96,59 @@ class GRIB:
 
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
+        self._filename = file_name
         self._path = os.path.join("gribs",file_name)
         # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
         self._path_ok = True
         if not os.path.exists(self._path):
             self._path_ok = False
+            raise FileNotFoundError(f"Couldn't find a grib file at {self._path}")
         else:
-            self._data = {
-                "index": [],
-                "short_name_list":[],
-                "latitudes" :[],
-                "longitudes" :[],
-                "times":[],
-                "level_list": [],
-                "time_list": [],
-                "date_list":[],
-            }
-            self._data_list = None
-            self._datetime = None
-            self._read_all()
-            print(self._data)
+            if not self._check_txt_path():
+                if self._check_grib_path():
+                    self._data = {
+                        "index": [],
+                        "short_name_list":[],
+                        "latitudes" :[],
+                        "longitudes" :[],
+                        "times":[],
+                        "level_list": [],
+                        "time_list": [],
+                        "date_list":[],
+                    }
+                    self._data_list = None
+                    self._datetime = None
+                    self._read_all()
+                    print(self._data)
+                else:
+                    raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
 
+    def _check_grib_path(self)->bool:
+        checkpath= os.path.join("gribs",self._filename)
+        return os.path.exists(checkpath)
+        
+
+    def _check_txt_path(self)->bool:
+        checkpath = os.path.join("gribs",self._create_txt_path())
+        return os.path.exists(checkpath)
+        
+
+    def _create_txt_path(self, path_flag: bool=False):
+        if self._filename[-5:] == ".grib":
+            self._filename = self._filename[:-5]
+        elif self._filename[-4:] == ".grb":
+            self._filename = self._filename[:-4]
+        elif self._filename[-6:] == ".grib2":
+            self._filename = self._filename[:-6]
+        else:
+            raise Invalid_grib_extension(f"Extension of {self._filename} is invalid")
+        self_filename = self._filename +  ".txt"
+        if path_flag == True:
+            self._path = os.path.join("gribs",self._filename)
+        return
+
+    def _translate_to_txt(self):
+        self._create_txt_path()
 
     def _create_distributed_array(self,number_of_points: int,first_point: int,last_point: int)->list:
         step = (last_point - first_point)/number_of_points
@@ -144,6 +179,7 @@ class GRIB:
 
     
     def _read_all(self):
+        """Assumes all messages are single level"""
         self._create_grid()
         with open(self._path, 'rb') as file:
             big_list = []
@@ -191,7 +227,7 @@ class GRIB:
                     return i
 
 
-    def read_point_weather(self, index, lat:float,lon:float,) -> dict:
+    def read_point_weather(self, lat:float,lon:float,) -> dict:
         """expect self._data values to be npndarrays 2d"""
         lattitude = self._find_closest_lat(lat)
         longitude = self._find_closest_lon(lon)
