@@ -129,7 +129,8 @@ class GRIB:
         
 
     def _check_txt_path(self)->bool:
-        checkpath = os.path.join("gribs",self._create_txt_path())
+        text_path = self._create_txt_path()
+        checkpath = os.path.join("gribs",text_path)
         return os.path.exists(checkpath)
         
 
@@ -239,7 +240,7 @@ class GRIB:
                 point_data_dict[self._data["index"][i]] = self._data[self._data["index"][i]][lattitude,longitude]
                 point_data_dict["index"].append(self._data["index"][i])
             else:
-                raise Point_not_in_weather_values(f"The point at {lattitude},{longitude} index was not found in {self._data["index"][i]}")
+                raise Point_not_in_weather_values(f"The point at {lattitude},{longitude} index was not found in {self._data['index'][i]}")
         return point_data_dict
 
 
