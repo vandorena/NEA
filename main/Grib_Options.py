@@ -8,6 +8,9 @@ import numpy as np
 class Bad_Grib(Exception):
     """Exception for a bad grib"""
 
+class Incompatible_Extension(Bad_Grib):
+    """Exception raised when an incompatible extension is used"""
+
 class Incompatible_Grid_Type(Bad_Grib):
     """Exception relating to the type of Grid, raised if the type of Grid used by the Grib message is not 'regular_ll' """
 
@@ -97,14 +100,19 @@ class GRIB:
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._filename = file_name
+        self._extension = self._get_extension()
         self._path = os.path.join("gribs",file_name)
         # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
         self._path_ok = True
         if not os.path.exists(self._path):
             self._path_ok = False
+            print(1)
             raise FileNotFoundError(f"Couldn't find a grib file at {self._path}")
         else:
+            print(2)
             if not self._check_txt_path():
+                print(1)
+                print(self._filename)
                 if self._check_grib_path():
                     self._data = {
                         "index": [],
@@ -124,17 +132,37 @@ class GRIB:
                     raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
 
     def _check_grib_path(self)->bool:
-        checkpath= os.path.join("gribs",self._filename)
-        return os.path.exists(checkpath)
+        pathcheck = os.path.exists(self._path)
+        return pathcheck
+    
+    def _get_extension(self)->str:
+        if self._filename[-4]==".":
+            return ".grb"
+        elif self._filename[-5]==".":
+            return ".grib"
+        elif self._filename[-6]==".":
+            return ".grib2"
+        else:
+            raise Incompatible_Extension(f"The extension in {self._filename} is not equal to '.grib','.grb' or '.grib2'")
         
 
     def _check_txt_path(self)->bool:
-        text_path = self._create_txt_path()
-        checkpath = os.path.join("gribs",text_path)
-        return os.path.exists(checkpath)
+        self._create_txt_path()
+        checkpath = os.path.join("gribs",self._filename)
+        values = os.path.exists(checkpath)
+        self._restore_filename()
+        return values
         
+    def _restore_filename(self):
+        print(self._filename)
+        self._filename = self._filename[:-4]
+        print(self._filename)
+        self._filename = self._filename + self._extension
+        print(self._filename)
+        return
 
-    def _create_txt_path(self, path_flag: bool=False):
+
+    def _create_txt_path(self, path_flag: bool=False)->None:
         if self._filename[-5:] == ".grib":
             self._filename = self._filename[:-5]
         elif self._filename[-4:] == ".grb":
@@ -143,7 +171,7 @@ class GRIB:
             self._filename = self._filename[:-6]
         else:
             raise Invalid_grib_extension(f"Extension of {self._filename} is invalid")
-        self_filename = self._filename +  ".txt"
+        self._filename = self._filename +  ".txt"
         if path_flag == True:
             self._path = os.path.join("gribs",self._filename)
         return
@@ -152,13 +180,18 @@ class GRIB:
         self._create_txt_path()
 
     def _create_distributed_array(self,number_of_points: int,first_point: int,last_point: int)->list:
-        step = (last_point - first_point)/number_of_points
+        if number_of_points ==1:
+            return [first_point]
+        if first_point == last_point:
+            return [first_point]*number_of_points
+        step = (last_point - first_point)/(number_of_points-1)
         points = [first_point]
-        while points[-1] < last_point:
-            new_point = points[-1] + step
+        for i in range(1,number_of_points):
+            new_point = first_point + (i*step)
             points.append(new_point)
-            if points[-1] >= last_point:
-                break
+            
+        print(points)
+        print(f"Number_of_points{number_of_points}")
         return points
 
     def _create_grid(self):
@@ -250,6 +283,8 @@ class GRIB:
         nj = len(self._data["latitudes"])
         ni = len(self._data["longitudes"])
         expected_size = nj*ni
+        print(f"hi{nj}")
+
         
         if values.size != expected_size:
             raise(ValueError(f"Cannot reshape an array of {values.size} into shape({nj},{ni})"))
@@ -264,6 +299,7 @@ class GRIB:
 
         if short_name not in self._data["short_name_list"]:
             self._data["short_name_list"].append(short_name)
+            print(f"dealing with list{short_name}")
         if level not in self._data["level_list"]:
             self._data["level_list"].append(level)
         if time not in self._data["time_list"]:
