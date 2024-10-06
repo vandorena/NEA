@@ -195,21 +195,23 @@ class GRIB:
         return points
 
     def _create_grid(self):
-
-        with open(self._path, "rb") as file:
-            current_message = codes_grib_new_from_file(file)
-            gridtype = codes_get(current_message,"typeOfGrid")
-            if gridtype != "regular_ll":
-                raise Incompatible_Grid_Type("Incompatible Grid Type")
-            else:
-                number_of_longitudes = codes_get(current_message,"Ni")
-                number_of_latitudes = codes_get(current_message,"Nj")
-                first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
-                last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
-                first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
-                last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
-                self._data["latitudes"] = self._create_distributed_array(number_of_latitudes,first_lat,last_lat)
-                self._data["longitudes"] = self._create_distributed_array(number_of_longitudes,first_long,last_long)
+        if "latitudes" in self._data and "longitudes" in self._data:
+            return
+        else:
+            with open(self._path, "rb") as file:
+                current_message = codes_grib_new_from_file(file)
+                gridtype = codes_get(current_message,"typeOfGrid")
+                if gridtype != "regular_ll":
+                    raise Incompatible_Grid_Type("Incompatible Grid Type")
+                else:
+                    number_of_longitudes = codes_get(current_message,"Ni")
+                    number_of_latitudes = codes_get(current_message,"Nj")
+                    first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
+                    last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
+                    first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
+                    last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
+                    self._data["latitudes"] = self._create_distributed_array(number_of_latitudes,first_lat,last_lat)
+                    self._data["longitudes"] = self._create_distributed_array(number_of_longitudes,first_long,last_long)
 
     
     def _read_all(self):
@@ -217,29 +219,23 @@ class GRIB:
         self._create_grid()
         with open(self._path, 'rb') as file:
             big_list = []
-            end_file = False
-
-            while not end_file:
+            while True:
+                current_message = codes_grib_new_from_file(file)
+                if current_message == None:
+                    break
                 try:
-                    current_message = codes_grib_new_from_file(file)
-                    if current_message == None:
-                        end_file = True
-                        break
                     values = codes_get_values(current_message)
                     name = codes_get(current_message,"shortName")
                     date = codes_get(current_message,"date")
                     time = codes_get(current_message,"time")
                     if codes_get(current_message,"bottomLevel") == codes_get(current_message,"topLevel"):
-                        values = np.append(values, codes_get(current_message,"bottomLevel"))
+                        level = codes_get(current_message,"bottomLevel")
+                        big_list.append(np.append(values,[level,time,date,name]))
                     else:
                         raise Incompatible_level_information("Message has multiple Levels")
-                    values = np.append(values, [time, date, name])
-                    big_list.append(values)
                 except Exception:
                     file.close()
-                    raise Bad_Grib("Grib is corrupt")
-            
-            
+                    raise Bad_Grib("Grib is corrupt")     
         self._data_digest(big_list)
 
     def _find_closest_lat(self,lat:float)->float:
@@ -334,4 +330,3 @@ if __name__ == "__main__":
     #     target=current_folder,
     # )
     grib = GRIB(r"thefrib.grib2")
-    grib._read_all()
