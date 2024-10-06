@@ -100,6 +100,8 @@ class GRIB:
     def __init__(self, file_name:str) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._filename = file_name
+        self.ni = 0
+        self.nj = 0
         self._extension = self._get_extension()
         self._path = os.path.join("gribs",file_name)
         # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
@@ -117,8 +119,6 @@ class GRIB:
                     self._data = {
                         "index": [],
                         "short_name_list":[],
-                        "latitudes" :[],
-                        "longitudes" :[],
                         "times":[],
                         "level_list": [],
                         "time_list": [],
@@ -204,14 +204,15 @@ class GRIB:
                 if gridtype != "regular_ll":
                     raise Incompatible_Grid_Type("Incompatible Grid Type")
                 else:
-                    number_of_longitudes = codes_get(current_message,"Ni")
-                    number_of_latitudes = codes_get(current_message,"Nj")
+                    self.ni = codes_get(current_message,"Ni")
+                    self.nj = codes_get(current_message,"Nj")
+                    print(f"ni:{self.ni},nj:{self.nj}")
                     first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
                     last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
                     first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
                     last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
-                    self._data["latitudes"] = self._create_distributed_array(number_of_latitudes,first_lat,last_lat)
-                    self._data["longitudes"] = self._create_distributed_array(number_of_longitudes,first_long,last_long)
+                    self._data["latitudes"] = self._create_distributed_array(self.nj,first_lat,last_lat)
+                    self._data["longitudes"] = self._create_distributed_array(self.ni,first_long,last_long)
 
     
     def _read_all(self):
@@ -225,11 +226,11 @@ class GRIB:
                     break
                 try:
                     values = codes_get_values(current_message)
-                    name = codes_get(current_message,"shortName")
-                    date = codes_get(current_message,"date")
-                    time = codes_get(current_message,"time")
+                    name = codes_get(current_message,"shortName") # str
+                    date = codes_get(current_message,"date") #int
+                    time = codes_get(current_message,"time") #int
                     if codes_get(current_message,"bottomLevel") == codes_get(current_message,"topLevel"):
-                        level = codes_get(current_message,"bottomLevel")
+                        level = codes_get(current_message,"bottomLevel") #int
                         big_list.append(np.append(values,[level,time,date,name]))
                     else:
                         raise Incompatible_level_information("Message has multiple Levels")
@@ -276,37 +277,36 @@ class GRIB:
         
 
     def _reshape_array(self,values: np.ndarray):
-        nj = len(self._data["latitudes"])
-        ni = len(self._data["longitudes"])
-        expected_size = nj*ni
-        print(f"hi{nj}")
+        expected_size = self.ni * self.nj
 
         
         if values.size != expected_size:
-            raise(ValueError(f"Cannot reshape an array of {values.size} into shape({nj},{ni})"))
-        return np.reshape(values,(nj,ni))
+            raise(ValueError(f"Cannot reshape an array of {values.size} into shape({self.nj},{self.ni})"))
+        return np.reshape(values,(self.nj,self.ni))
         
     def _digest_per_values(self,values:np.ndarray):
         short_name = values[-1]
         date = values[-2]
         time = values[-3]
         level = values[-4]
-        values = values[:-4]
+        reshaped_values = self._reshape_array(values[:-4])
 
-        if short_name not in self._data["short_name_list"]:
-            self._data["short_name_list"].append(short_name)
-            print(f"dealing with list{short_name}")
-        if level not in self._data["level_list"]:
-            self._data["level_list"].append(level)
-        if time not in self._data["time_list"]:
-            self._data["time_list"].append(time)
-        if date not in self._data["date_list"]:
-            self._data["date_list"].append(date)
-        index = short_name + date + time + level# all type str
+
+        index = f"{short_name}_{date}_{time}_{level}"
+        self._update_metadata(short_name,date,time,level)
         self._data["index"].append(index)
-        self._data[index] = self._reshape_array(values)
+        self._data[index] = reshaped_values
         return
 
+    def _update_metadata(self, short_name: str , date: int, time:int , level:int)->None:
+        if short_name not in self._data["short_name_list"]:
+            self._data["short_name_list"].append(short_name)
+        if level not in self._data["level_list"]:
+            self._data["level_list"].append(level)
+        if date not in self._data["date_list"]:
+            self._data["date_list"].append(date)
+        if time not in self._data["time_list"]:
+            self._data["time_list"].append(time)
 
     def _data_digest(self,big_list:list):
         for values in big_list:
