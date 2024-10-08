@@ -4,6 +4,7 @@ import os
 import globals
 from eccodes import codes_grib_new_from_file, codes_get_values, codes_get, codes_release
 import numpy as np
+from itertools import islice
 
 class Bad_Grib(Exception):
     """Exception for a bad grib"""
@@ -154,11 +155,12 @@ class GRIB:
         return values
         
     def _restore_filename(self):
-        print(self._filename)
-        self._filename = self._filename[:-4]
-        print(self._filename)
-        self._filename = self._filename + self._extension
-        print(self._filename)
+        if ".txt" in self._filename:
+            print(self._filename)
+            self._filename = self._filename[:-4]
+            print(self._filename)
+            self._filename = self._filename + self._extension
+            print(self._filename)
         return
 
 
@@ -178,6 +180,7 @@ class GRIB:
 
     def _translate_to_txt(self):
         self._create_txt_path()
+        self._restore_filename()
 
     def _create_distributed_array(self,number_of_points: int,first_point: int,last_point: int)->list:
         if number_of_points ==1:
@@ -239,6 +242,23 @@ class GRIB:
                     raise Bad_Grib("Grib is corrupt")     
         self._data_digest(big_list)
 
+    def _find_line_index(self,lat,lon)->int:
+        lat_index = self._find_closest_lat(lat)
+        lon_index = self._find_closest_lon
+        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index
+        return value
+    
+    def read_single_line(self,lat:float,lon:float)->list:
+        line_number = self._find_line_index(lat,lon)
+        self._create_txt_path()
+        with open(self._filename,"r") as file:
+            single_line = next(islice(file,line_number,line_number+1),None)
+            if single_line != None:
+                print(type(single_line))
+                self._restore_filename()
+                return single_line
+        self._restore_filename()
+
     def _find_closest_lat(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
         if lat in self._data["latitudes"]:
@@ -278,8 +298,6 @@ class GRIB:
 
     def _reshape_array(self,values: np.ndarray):
         expected_size = self.ni * self.nj
-
-        
         if values.size != expected_size:
             raise(ValueError(f"Cannot reshape an array of {values.size} into shape({self.nj},{self.ni})"))
         return np.reshape(values,(self.nj,self.ni))
