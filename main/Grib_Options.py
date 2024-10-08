@@ -131,9 +131,14 @@ class GRIB:
                     self._data_list = None
                     self._datetime = None
                     self._read_all()
-                    print(self._data)
+                    self._translate_to_txt()
                 else:
                     raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
+            else:
+                self._data = {}
+                self.read_metadata()
+                print(self._data)
+                print("yay")
 
     def _check_grib_path(self)->bool:
         pathcheck = os.path.exists(self._path)
@@ -183,10 +188,10 @@ class GRIB:
 
     def _translate_to_txt(self):
         self._create_txt_path()
-        with open(self._filename,"a") as file:
+        with open(os.path.join("gribs",self._filename),"a") as file:
             index_metadata = " ".join(f"{index} " for index in self._data["index"] )
             file.write(index_metadata +"\n")
-            shotname_metadata = " ".join(f"{sn} " for sn in self._data["shortname_list"])
+            shotname_metadata = " ".join(f"{sn} " for sn in self._data["short_name_list"])
             file.write(shotname_metadata + "\n")
             time_metadata = " ".join(f"{time} " for time in self._data["time_list"])
             file.write(time_metadata + "\n")
@@ -268,13 +273,16 @@ class GRIB:
 
     def _find_line_index(self,lat,lon)->int:
         lat_index = self._find_closest_lat(lat)
-        lon_index = self._find_closest_lon
-        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index +7
+        lon_index = self._find_closest_lon(lon)
+        print(type(lat_index))
+        print(lat_index)
+        print(type(self._data["longitudes"]))
+        value = ( lat_index * (len(self._data["longitudes"])) ) + lon_index +7
         return value
     
     def read_metadata(self):
         self._create_txt_path()
-        with open(self._filename,"r") as file:
+        with open(os.path.join("gribs",self._filename),"r") as file:
             for i in range(7):
                 current_line = file.readline()
                 if i == 0:
@@ -296,7 +304,7 @@ class GRIB:
     def read_single_line(self,lat:float,lon:float)->list:
         line_number = self._find_line_index(lat,lon)
         self._create_txt_path()
-        with open(self._filename,"r") as file:
+        with open(os.path.join("gribs",self._filename),"r") as file:
             single_line = next(islice(file,line_number,line_number+1),None)
             if single_line != None:
                 print(type(single_line))
@@ -308,22 +316,29 @@ class GRIB:
 
     def _find_closest_lat(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
-        if lat in self._data["latitudes"]:
-            return self._data["latitudes"].index(lat)
+        if str(lat) in self._data["latitudes"]:
+            index = self._data["latitudes"].index(str(lat))
         else:
             for i in range(1,len(self._data["latitudes"])):
-                if self._data["latitudes"][i-1] < lat and self._data["latitudes"][i] > lat:
-                    return i
-
+                if float(self._data["latitudes"][i-1]) < lat and float(self._data["latitudes"][i]) > lat:
+                    index = i
+                    break
+        if index is None:
+            raise Exception("i dont know whats up")
+        return index
+    
     def _find_closest_lon(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists returns index"""
-        if lat in self._data["longitudes"]:
-            return self._data["longitudes"].index(lat)
+        if str(lat) in self._data["longitudes"]:
+            index = self._data["longitudes"].index(str(lat))
         else:
             for i in range(1,len(self._data["longitudes"])):
-                if self._data["longitudes"][i-1] < lat and self._data["longitudes"][i] > lat:
-                    return i
-
+                if float(self._data["longitudes"][i-1]) < lat and float(self._data["longitudes"][i]) > lat:
+                    index = i
+                    break
+        if index is None:
+            raise Exception("i dont know whats up")
+        return index
 
     def read_point_weather(self, lat:float,lon:float,) -> dict:
         """expect self._data values to be npndarrays 2d"""
