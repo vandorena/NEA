@@ -24,6 +24,9 @@ class Point_not_in_weather_values(Bad_Grib):
 class Invalid_grib_extension(Bad_Grib):
     """Exception for a filename with an incompatible file extension"""
 
+class LineNotInFile(FileNotFoundError):
+    """Exception for when a line is not found in the file"""
+
 class Grib_Modifiers:
     """Parent Class for respective API modifiers, dealing with the NOAA and ECMWF Models, """
 
@@ -180,6 +183,23 @@ class GRIB:
 
     def _translate_to_txt(self):
         self._create_txt_path()
+        with open(self._filename,"a") as file:
+            index_metadata = " ".join(f"{index} " for index in self._data["index"] )
+            file.write(index_metadata +"\n")
+            shotname_metadata = " ".join(f"{sn} " for sn in self._data["shortname_list"])
+            file.write(shotname_metadata + "\n")
+            time_metadata = " ".join(f"{time} " for time in self._data["time_list"])
+            file.write(time_metadata + "\n")
+            date_metadata = " ".join(f"{date} " for date in self._data["date_list"])
+            file.write(date_metadata + "\n")
+            level_metadata = " ".join(f"{level} " for level in self._data["level_list"])
+            file.write(level_metadata  + "\n")
+            for i in range(0,len(self._data["latitudes"])):
+                for j in range(0,len(self._data["longitudes"])):
+                    append_string = " ".join(f"{self._data[index][i][j]} " for index in self._data["index"])
+                    file.write(append_string+"\n")
+        for index in self._data["index"]:
+            self._data[index] = None
         self._restore_filename()
 
     def _create_distributed_array(self,number_of_points: int,first_point: int,last_point: int)->list:
@@ -245,9 +265,20 @@ class GRIB:
     def _find_line_index(self,lat,lon)->int:
         lat_index = self._find_closest_lat(lat)
         lon_index = self._find_closest_lon
-        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index
+        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index +5
         return value
     
+    def read_metadata(self):
+        self._create_txt_path()
+        with open(self._filename,"r") as file:
+            for i in range(5):
+                current_line = file.readline()
+                if i == 0:
+                    self._data["index"] = current_line.split()
+                elif i ==1:
+                    self._data["shortname_list"] = 
+                    
+
     def read_single_line(self,lat:float,lon:float)->list:
         line_number = self._find_line_index(lat,lon)
         self._create_txt_path()
@@ -256,7 +287,9 @@ class GRIB:
             if single_line != None:
                 print(type(single_line))
                 self._restore_filename()
-                return single_line
+                return single_line.split()
+            else:
+                raise LineNotInFile(f"File does not contain a line: {line_number}")
         self._restore_filename()
 
     def _find_closest_lat(self,lat:float)->float:
