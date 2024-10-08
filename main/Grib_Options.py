@@ -194,6 +194,10 @@ class GRIB:
             file.write(date_metadata + "\n")
             level_metadata = " ".join(f"{level} " for level in self._data["level_list"])
             file.write(level_metadata  + "\n")
+            latitude_metadata = " ".join(f"{latitude} " for latitude in self._data["latitudes"])
+            file.write(latitude_metadata + "\n")
+            longitude_metadata = " ".join(f"{longitude} " for longitude in self._data["longitudes"])
+            file.write(longitude_metadata + "\n")
             for i in range(0,len(self._data["latitudes"])):
                 for j in range(0,len(self._data["longitudes"])):
                     append_string = " ".join(f"{self._data[index][i][j]} " for index in self._data["index"])
@@ -265,19 +269,29 @@ class GRIB:
     def _find_line_index(self,lat,lon)->int:
         lat_index = self._find_closest_lat(lat)
         lon_index = self._find_closest_lon
-        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index +5
+        value = ( lat_index * len(self._data["longitudes"]) ) + lon_index +7
         return value
     
     def read_metadata(self):
         self._create_txt_path()
         with open(self._filename,"r") as file:
-            for i in range(5):
+            for i in range(7):
                 current_line = file.readline()
                 if i == 0:
                     self._data["index"] = current_line.split()
                 elif i ==1:
-                    self._data["shortname_list"] = 
-                    
+                    self._data["short_name_list"] = current_line.split()
+                elif i ==2:
+                    self._data["time_list"] = current_line.split()
+                elif i ==3:
+                    self._data["date_list"] = current_line.split()
+                elif i == 4:
+                    self._data["level_list"] = current_line.split()
+                elif i == 5:
+                    self._data["latitudes"] = current_line.split()
+                elif i == 6:
+                    self._data["longitudes"] = current_line.split()
+
 
     def read_single_line(self,lat:float,lon:float)->list:
         line_number = self._find_line_index(lat,lon)
