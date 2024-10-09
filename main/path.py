@@ -26,10 +26,12 @@ class Path:
         self.started = False
         self.ended = False
         
-        self.path_data_names = ["lat","lon","times","speeds","windspeed","gust_speed","wind_direction","wave_height", "wave_direction", "air_pressure","ocean_current_direction","ocean_current_speed"]
+        self.path_data_names = ["lat","lon", "great_circle_lat", "great_circle_lon","times","speeds","windspeed","gust_speed","wind_direction","wave_height", "wave_direction", "air_pressure","ocean_current_direction","ocean_current_speed"]
         self.path_data = {
             "lat":[],
             "lon":[],
+            "great_circle_lat":[],
+            "great_circle_lon":[],
             "times":[],
             "speeds":[],
             "windspeed":[],
@@ -44,6 +46,11 @@ class Path:
 
     def set_start(self):
         self.started = True
+
+
+    def append_great_circle_point(self,lat:float,lon:float):
+        self.path_data["great_circle_lat"].append(lat)
+        self.path_data["great_circle_lon"].append(lon)
 
     def set_end(self):
         self.ended = True
