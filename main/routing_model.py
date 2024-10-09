@@ -30,9 +30,15 @@ class Routing_Model:
         #HaversineFormula
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
         self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
+        
+    def _windspeed_magnitude_in_knts(self,u:float,v:float)->float:
+        "returns windspeed in knots"
+        windspeed = sqrt(u**2 + v**2)
+        knts = windspeed * 1.94384
+        return knts
 
     def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float:
-        "Returns an angle bearing in radians"
+        "Returns an angle bearing in radians, can work with v and u components of wind speed"
         if delta_lon == 0:
             if delta_lat > 0:
                 return 0
@@ -57,5 +63,7 @@ class Routing_Model:
             elif delta_lon < 0 and delta_lat < 0:
                 value = pi + atan((delta_lon/delta_lat))
             return value
+        
+
     def run_isometric(self):
         pass
