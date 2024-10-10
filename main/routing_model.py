@@ -37,6 +37,13 @@ class Routing_Model:
         knts = windspeed * 1.94384
         return knts
 
+    def find_windspeed_info(self,lat,lon):
+        grib_values_at_point = self._current_grib.read_single_line(lat,lon)
+
+    def _find_twa(self,v:float,u:float):
+        value = self._angle_to_destination_gcr(v,u)
+        return value
+
     def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float:
         "Returns an angle bearing in radians, can work with v and u components of wind speed"
         if delta_lon == 0:
