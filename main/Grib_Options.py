@@ -132,6 +132,7 @@ class GRIB:
                     self._datetime = None
                     self._read_all()
                     self._translate_to_txt()
+                    print(self._data["time_list"])
                 else:
                     raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
             else:
@@ -241,6 +242,7 @@ class GRIB:
                     print(f"ni:{self.ni},nj:{self.nj}")
                     first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
                     last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
+                    self._last_long = last_long
                     first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
                     last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
                     self._data["latitudes"] = self._create_distributed_array(self.nj,first_lat,last_lat)
@@ -252,9 +254,10 @@ class GRIB:
         self._create_grid()
         with open(self._path, 'rb') as file:
             big_list = []
+            index_check_list = []
             while True:
                 current_message = codes_grib_new_from_file(file)
-                if current_message == None:
+                if current_message is None:
                     break
                 try:
                     values = codes_get_values(current_message)
@@ -262,8 +265,21 @@ class GRIB:
                     date = codes_get(current_message,"date") #int
                     time = codes_get(current_message,"time") #int
                     if codes_get(current_message,"bottomLevel") == codes_get(current_message,"topLevel"):
+                        current_ni = codes_get(current_message,"Ni")
+                        current_nj = codes_get(current_message,"Nj")
+                        first_long = codes_get(current_message,"longitudeOfFirstGridPointInDegrees")
+                        last_long = codes_get(current_message,"longitudeOfLastGridPointInDegrees")
+                        first_lat = codes_get(current_message,"latitudeOfFirstGridPointInDegrees")
+                        last_lat = codes_get(current_message,"latitudeOfLastGridPointInDegrees")
                         level = codes_get(current_message,"bottomLevel") #int
-                        big_list.append(np.append(values,[level,time,date,name]))
+                        current_id_value = [current_ni,current_nj,first_long,first_lat,last_lat,last_long,name,date,time,level]
+                        if current_id_value in index_check_list:
+                            break
+                        else:
+                            index_check_list.append(current_id_value)
+                        print(f"Dealing with : name: {name} , date: {date}, time: {time}, level: {level}")
+                        print(f"Message Info: Ni {current_ni}, nj {current_nj}, First Point ({first_long}, {first_lat}), Last Point ({last_long}, {last_lat})")
+                        big_list.append(np.append(values, [level,time,date,name]))
                     else:
                         raise Incompatible_level_information("Message has multiple Levels")
                 except Exception:
@@ -323,7 +339,7 @@ class GRIB:
                 if float(self._data["latitudes"][i-1]) < lat and float(self._data["latitudes"][i]) > lat:
                     index = i
                     break
-        if index is None:
+        if index == None:
             raise Exception("i dont know whats up")
         return index
     
@@ -362,20 +378,20 @@ class GRIB:
         expected_size = self.ni * self.nj
         if values.size != expected_size:
             raise(ValueError(f"Cannot reshape an array of {values.size} into shape({self.nj},{self.ni})"))
-        return np.reshape(values,(self.nj,self.ni))
+        return np.reshape(values.copy(),(self.nj,self.ni))
         
     def _digest_per_values(self,values:np.ndarray):
         short_name = values[-1]
         date = values[-2]
         time = values[-3]
         level = values[-4]
-        reshaped_values = self._reshape_array(values[:-4])
-
+        reshaped_values = self._reshape_array(values[:-4].copy())
 
         index = f"{short_name}_{date}_{time}_{level}"
-        self._update_metadata(short_name,date,time,level)
-        self._data["index"].append(index)
-        self._data[index] = reshaped_values
+        if index not in self._data["index"]:
+            self._update_metadata(short_name,date,time,level)
+            self._data["index"].append(index)
+            self._data[index] = reshaped_values
         return
 
     def _update_metadata(self, short_name: str , date: int, time:int , level:int)->None:
@@ -387,6 +403,23 @@ class GRIB:
             self._data["date_list"].append(date)
         if time not in self._data["time_list"]:
             self._data["time_list"].append(time)
+            print(self._data["time_list"])
+        try:
+            if not os.path.exists(os.path.join("gribs","log.txt")):
+                print("No")
+                print(self._data[self._data["index"][1]] )
+                print(self._data[self._data["index"][3]] )
+                print(self._data["longitudes"][0])
+                print(self.ni)
+                print(self._data["longitudes"][-1])
+                print(self._last_long)
+                with open(os.path.join("gribs","log.txt"),"w") as file:
+                    file.write(self._data[self._data["index"][1]])
+                    file.write("\n \n\n\n")
+                    file.write(self._data[self._data["index"][3]])
+
+        except BaseException:
+            pass
 
     def _data_digest(self,big_list:list):
         for values in big_list:
@@ -409,4 +442,4 @@ if __name__ == "__main__":
     #     param="msl",
     #     target=current_folder,
     # )
-    grib = GRIB(r"thefrib.grib2")
+    grib = GRIB(r"thebib.grib2")

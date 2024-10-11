@@ -38,10 +38,9 @@ if __name__ == "__main__":
     client.retrieve(
         source="azure",
         model="ifs",
-        step=240,
+        step=[0,6,12,18],
         type="fc",
         stream =  "oper",
-        param = ["u","v"],
-        levellist =1000,
-        target=r"gribs/thefrib.grib2",
+        param = ["10u","10v"],
+        target=r"gribs/thebib.grib2",
     )
