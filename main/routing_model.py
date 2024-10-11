@@ -3,6 +3,7 @@ from boats import Boat
 from Grib_Options import GRIB
 from globals import selected_grib
 from math import radians, asin,sqrt,cos,degrees, pi, atan
+from datetime import datetime
 
 class PathError(Exception):
     "BaseClass for Exceptions relating to path functions"
@@ -19,7 +20,7 @@ class Routing_Model:
         end_latitude = float(input("Enter the end lattitude: "))
         end_longitude = float(input("Enter the end longitude: "))
         boat = Boat
-        self._current_path = Path(start_latitude,start_longitude,end_latitude,end_longitude)
+        self._current_path = Path(boat,start_latitude,start_longitude,end_latitude,end_longitude)
         self._current_grib = selected_grib
 
     def create_big_circle_route(self):
@@ -37,8 +38,21 @@ class Routing_Model:
         knts = windspeed * 1.94384
         return knts
 
-    def find_windspeed_info(self,lat,lon):
+    def find_windspeed_info(self,lat,lon,dtime:datetime):
         grib_values_at_point = self._current_grib.read_single_line(lat,lon)
+        current_index = self._current_grib["index"]
+        if dtime.hour not in self._current_grib._data["times"]:
+            self._get_new_grib(dtime)
+        if dtime.hour in self._current_grib._data["times"]:
+            for index in current_index:
+                if index[]
+        
+    def _get_new_grib(self,dtime:datetime):
+        #make_call
+        # make object
+        #asssign-object
+        pass
+
 
     def _find_twa(self,v:float,u:float):
         value = self._angle_to_destination_gcr(v,u)

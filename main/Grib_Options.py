@@ -45,10 +45,11 @@ class Grib_Modifiers:
 class ECMWF_API(Grib_Modifiers):
     """ECMWF API grib options, Default Client is Physics driven - IFS, default server is ecmwf, with options for azure"""
 
-    def __init__(self) -> None:
+    def __init__(self, time:datetime = None) -> None:
         super().__init__()
         self._current_client = globals.BASECLIENT_PHYSICS
-        self._request = {
+        if time is None:
+            self._request = {
             "time": self._get_time(),
             "step": 48,
                          }
