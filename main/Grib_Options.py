@@ -36,11 +36,15 @@ class Grib_Modifiers:
         self._update_folder_path()
         self._request = None
 
-    def _update_folder_path(self):
+    def _update_folder_path(self, time=None):
         "Updates Folder Path to current time"
-        current_datetime = datetime.datetime.now()
-        os.mkdir(os.path.join("gribs",f"{current_datetime.date()}"))
-        self._current_folder = os.path.join("gribs",f"{current_datetime.date()}",f"{current_datetime.hour}-{current_datetime.minute}-{current_datetime.second}.grib2")
+        if time is None:
+            current_datetime = datetime.datetime.now()
+            os.mkdir(os.path.join("gribs",f"{current_datetime.date()}"))
+            self._current_folder = os.path.join("gribs",f"{current_datetime.date()}",f"{current_datetime.hour}-{current_datetime.minute}-{current_datetime.second}.grib2")
+        else:
+            os.mkdir(os.path.join("gribs",f"{time.date()}"))
+            self._current_folder = os.path.join("gribs",f"{time.date()}",f"{time.hour}-{time.minute}-{time.second}.grib2")
 
 class ECMWF_API(Grib_Modifiers):
     """ECMWF API grib options, Default Client is Physics driven - IFS, default server is ecmwf, with options for azure"""
@@ -53,6 +57,8 @@ class ECMWF_API(Grib_Modifiers):
             "time": self._get_time(),
             "step": 48,
                          }
+        else:
+            self.time = time
 
 
     def _change_client(self):
@@ -69,8 +75,11 @@ class ECMWF_API(Grib_Modifiers):
         else:
             return "PHYSICS"
 
-    def _get_time(self) -> int:
-        current_datetime = datetime.datetime.now()
+    def _get_time(self, time = None) -> int:
+        if time == None:
+            current_datetime = datetime.datetime.now()
+        else:
+            current_datetime = time
         if current_datetime.hour >= 0 and current_datetime.hour < 6:
             return "0"
         elif current_datetime.hour >= 6 and current_datetime.hour < 12:
@@ -80,14 +89,21 @@ class ECMWF_API(Grib_Modifiers):
         else:
             return "18"
         
+    
+        
     def make_request(self):
-        self._update_folder_path()
+        if self.time != datetime.datetime.now():
+            self._update_folder_path(self.time)
+        else:
+            self.time = datetime.datetime.now()
+            self._update_folder_path()
         client = self._current_client
         client.retrieve(
+            time = self._get_time(self.time),
             source=f"{self._current_client.source}",
             model=f"{self._current_client.model}",
             type = "fc",
-            param=["ws","u","v",""],
+            param=["u","v"],
             target=self._current_folder,
             infer_stream_keyword=True,
         )
@@ -102,13 +118,17 @@ class ECMWF_API(Grib_Modifiers):
 
 class GRIB:
 
-    def __init__(self, file_name:str) -> None:
+    def __init__(self, file_name:str, file_name_flag = None) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._filename = file_name
         self.ni = 0
         self.nj = 0
         self._extension = self._get_extension()
-        self._path = os.path.join("gribs",file_name)
+        self._filename_flag = file_name_flag
+        if file_name_flag is None:
+            self._path = os.path.join("gribs",file_name)
+        else:
+            self._path = file_name
         # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
         self._path_ok = True
         if not os.path.exists(self._path):
@@ -159,7 +179,8 @@ class GRIB:
 
     def _check_txt_path(self)->bool:
         self._create_txt_path()
-        checkpath = os.path.join("gribs",self._filename)
+        if self._filename_flag is None:
+            checkpath = os.path.join("gribs",self._filename)
         values = os.path.exists(checkpath)
         self._restore_filename()
         return values

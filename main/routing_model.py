@@ -1,9 +1,11 @@
 from path import Path
 from boats import Boat
-from Grib_Options import GRIB
+from Grib_Options import GRIB, ECMWF_API
 from globals import selected_grib
 from math import radians, asin,sqrt,cos,degrees, pi, atan
 from datetime import datetime
+from global_land_mask import globe
+import numpy as np
 
 class PathError(Exception):
     "BaseClass for Exceptions relating to path functions"
@@ -23,6 +25,9 @@ class Routing_Model:
         self._current_path = Path(boat,start_latitude,start_longitude,end_latitude,end_longitude)
         self._current_grib = selected_grib
 
+    def _check_in_water(self,lat,lon) -> bool:
+        return globe.is_ocean(lat,lon)
+
     def create_big_circle_route(self):
         lat_s, lon_s , lat_e , lon_e = map(radians,[self._current_path.start_lattitude,self._current_path.start_longitude,self._current_path.end_lattitude,self._current_path.end_longitude])
         delta_lat = lat_e - lat_s
@@ -39,16 +44,22 @@ class Routing_Model:
         return knts
 
     def find_windspeed_info(self,lat,lon,dtime:datetime):
+        pass
         grib_values_at_point = self._current_grib.read_single_line(lat,lon)
         current_index = self._current_grib["index"]
         if dtime.hour not in self._current_grib._data["times"]:
             self._get_new_grib(dtime)
-        if dtime.hour in self._current_grib._data["times"]:
-            for index in current_index:
-                if index[]
+        for i in range(0,len(current_index)):
+            if current_index[i]== "u":
+                u = grib_values_at_point[i]
+            if current_index[i] == "v":
+                v = grib_values_at_point[i]
+            
         
     def _get_new_grib(self,dtime:datetime):
-        #make_call
+        ECWMF_Client = ECMWF_API(time=dtime)
+        ECWMF_Client.make_request()
+        self._current_grib = GRIB(ECWMF_Client._current_folder)
         # make object
         #asssign-object
         pass
