@@ -35,16 +35,46 @@ class Routing_Model:
         earth_radius = 6.3781*(10**6) #in meters
         #HaversineFormula
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
-        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
+        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s),self._current_path.start_time)
+        end_point = False
+        while not end_point:
+            pass
+
+    def _straight_line_distance(self, gcr_flag:  bool=False, timestep: int=30):
+        """Timestep is expected int for mintures returns distance in nautical miles"""
+        if not gcr_flag:
+            lat = self._current_path.path_data["lat"][-1]
+            lon = self._current_path.path_data["lon"][-1]
+            time = self._current_path.path_data["times"][-1]
+        else:
+            lat = self._current_path.path_data["great_circle_lat"][-1]
+            lon = self._current_path.path_data["great_circle_lon"][-1]
+            time = self._current_path.path_data["great_circle_times"][-1]
+        u,v = self.find_windspeed_info(lat,lon,time)
+        ws_mag = self._windspeed_magnitude_in_knts(u,v)
+        twa = self._find_twa(v,u)
+        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+        distance_nm = boatspeed * (timestep)/60
+        return distance_nm
+    
+    def _route_single_point(self, bearing: int, gcr_flag: bool=False,timestep:int=30):
+        if not gcr_flag:
+            distance_nm = self._straight_line_distance(timestep=timestep)
+        else:
+            distance_nm = self._straight_line_distance(gcr_flag=True,timestep=timestep)
         
+
+    def _distance_bearing_lat_lon(self, distance_nm: int, bearing:int):
+        if bearing == 0:
+            lat = 
+
     def _windspeed_magnitude_in_knts(self,u:float,v:float)->float:
         "returns windspeed in knots"
         windspeed = sqrt(u**2 + v**2)
         knts = windspeed * 1.94384
         return knts
 
-    def find_windspeed_info(self,lat,lon,dtime:datetime):
-        pass
+    def find_windspeed_info(self,lat,lon,dtime:datetime)->tuple:
         grib_values_at_point = self._current_grib.read_single_line(lat,lon)
         current_index = self._current_grib["index"]
         if dtime.hour not in self._current_grib._data["times"]:
@@ -54,14 +84,12 @@ class Routing_Model:
                 u = grib_values_at_point[i]
             if current_index[i] == "v":
                 v = grib_values_at_point[i]
-            
+        return u,v
         
     def _get_new_grib(self,dtime:datetime):
         ECWMF_Client = ECMWF_API(time=dtime)
         ECWMF_Client.make_request()
         self._current_grib = GRIB(ECWMF_Client._current_folder)
-        # make object
-        #asssign-object
         pass
 
 

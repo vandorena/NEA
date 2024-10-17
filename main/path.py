@@ -11,7 +11,7 @@ class StringSlicingFailureforPathClass(Exception):
     """Error raised when there is a indexerror in the string slice"""
 class Path:
 
-    def __init__(self,start_time: datetime,start_lattitude: float = 0, start_longitude: float = 0,end_latitude: float=0, end_longitude: float = 0, boat: Boat=Boat) -> None:
+    def __init__(self,start_time: datetime, boat: Boat,start_lattitude: float = 0, start_longitude: float = 0,end_latitude: float=0, end_longitude: float = 0) -> None:
         
         self.start_lattitude = start_lattitude
         self.end_lattitude = start_longitude
@@ -32,6 +32,7 @@ class Path:
             "lon":[],
             "great_circle_lat":[],
             "great_circle_lon":[],
+            "great_circle_times":[],
             "times":[],
             "speeds":[],
             "windspeed":[],
