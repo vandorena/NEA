@@ -16,13 +16,15 @@ class Routing_Model:
     def __init__(self, path: Path,grib:GRIB) -> None:
         self._current_path = path
         self._current_grib = grib
+        self._current_bearing = -1
 
     def _create_path(self):
         start_latitude = float(input("Enter the starting lattitude: "))
         start_longitude = float(input("Enter the starting longitude: "))
         end_latitude = float(input("Enter the end lattitude: "))
         end_longitude = float(input("Enter the end longitude: "))
-        boat = Boat
+        boat = Boat()
+        boat.add_polar(r"Boats/") #Fix this
         self._current_path = Path(boat,start_latitude,start_longitude,end_latitude,end_longitude)
         self._current_grib = selected_grib
 
@@ -40,6 +42,9 @@ class Routing_Model:
         end_point = False
         bearing = self._angle_to_destination_gcr(delta_lat,delta_lon)
         while not end_point:
+            lat,lon = self._route_single_point(bearing,True)
+            self._current_path.path_data["great_circle_lat"].append(lat)
+            self._current_path.path_data["great_circle_lon"].append(lon)
             
 
     def _straight_line_distance(self, gcr_flag:  bool=False, timestep: int=30):
@@ -59,6 +64,23 @@ class Routing_Model:
         distance_nm = boatspeed * (timestep)/60
         return distance_nm
     
+    def _distance_from_current_to_point(self, gcr_flag: bool=False):
+        lat_e = radians(self._current_path.end_lattitude)
+        lon_e = radians(self._current_path.end_longitude)
+        if gcr_flag == True:
+            current_lat = radians(self._current_path.path_data["great_circle_lat"][-1])
+            current_lon = radians(self._current_path.path_data["great_circle_lon"][-1])
+        else:
+            current_lat = radians(self._current_path.path_data["lat"][-1])
+            current_lon = radians(self._current_path.path_data["lon"][-1])
+        delta_lat = lat_e - current_lat
+        delta_lon = lon_e - current_lon
+        earth_radius = 6.3781*(10**6) #in meters
+        #HaversineFormula
+        distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(current_lat)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
+        
+        
+
     def _route_single_point(self, bearing: int, gcr_flag: bool=False,timestep:int=30):
         if not gcr_flag:
             distance_nm = self._straight_line_distance(timestep=timestep)
@@ -96,7 +118,16 @@ class Routing_Model:
 
     def _find_twa(self,v:float,u:float):
         value = self._angle_to_destination_gcr(v,u)
-        return value
+        bearing = radians(self._current_bearing)
+        angle = value - bearing
+        if angle > radians(180):
+            angle = degrees(angle)
+            angle = angle - 360
+        elif degrees(angle) < -180:
+            angle = degrees(angle)  + 360
+        else:
+            angle = degrees(angle)
+        return angle
 
     def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float:
         "Returns an angle bearing in radians, can work with v and u components of wind speed"
