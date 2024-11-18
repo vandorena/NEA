@@ -25,6 +25,8 @@ class Path:
         self.current_boat = boat
         self.started = False
         self.ended = False
+
+        self._gcr_time = 0
         
         self.path_data_names = ["lat","lon", "great_circle_lat", "great_circle_lon","times","speeds","windspeed","gust_speed","wind_direction","wave_height", "wave_direction", "air_pressure","ocean_current_direction","ocean_current_speed"]
         self.path_data = {
