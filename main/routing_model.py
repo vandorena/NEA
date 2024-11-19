@@ -48,10 +48,13 @@ class Routing_Model:
         bearing = self._angle_to_destination_gcr(delta_lat,delta_lon)
         gcr_distances = []
         self._current_path._gcr_time = 0
+        land_list = []
         while not end_point:
             lat,lon = self._route_single_point(bearing,True)
             if not self._check_in_water(lat,lon) and not ignore_exception:
                 raise OutWaterException(f"point at {lat},{lon} is land ")
+            elif not self._check_in_water(lat,lon) and ignore_exception:
+                land_list.append([lat,lon])
             self._current_path.path_data["great_circle_lat"].append(lat)
             self._current_path.path_data["great_circle_lon"].append(lon)
             self._current_path._gcr_time += 30
@@ -59,11 +62,14 @@ class Routing_Model:
             if gcr_distances[-1] < 100 or gcr_distances[-1]>gcr_distances[-2]:
                 gcr_distances = 0
                 if ignore_exception:
-                    self._current_path._gcr_time == 1000000
+                    self._current_path._gcr_time = 1000000
                 else:
                     self._current_path._gcr_time += 30
                 end_point = True
-        return       
+        if not ignore_exception:
+            return
+        else: 
+            return land_list
 
     def _straight_line_distance(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
@@ -156,6 +162,16 @@ class Routing_Model:
         return angle
         
 
-    def run_isometric(self,lat,lon):
-        if self._current_path._gcr_time == 0:
+    def run_isometric(self):
+        land = []
+        try:
+            self.create_big_circle_route()
+        except OutWaterException:
+            land = self.create_big_circle_route(True)
+        if len(land) != 0:
+            pass
+        else:
+            pass
+
+    def isometric(self,lat,lon):
         pass
