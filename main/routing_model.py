@@ -3,7 +3,7 @@ from boats import Boat
 from Grib_Options import GRIB, ECMWF_API
 from globals import selected_grib
 from math import radians, asin,sqrt,cos,degrees, pi, atan, atan2
-from datetime import datetime
+from datetime import datetime,timedelta
 from global_land_mask import globe
 import numpy as np
 from haversine import inverse_haversine
@@ -50,7 +50,7 @@ class Routing_Model:
         self._current_path._gcr_time = 0
         land_list = []
         while not end_point:
-            lat,lon = self._route_single_point(gcr_flag=True)
+            lat,lon = self._route_single_point(True)
             if not self._check_in_water(lat,lon) and not ignore_exception:
                 raise OutWaterException(f"point at {lat},{lon} is land ")
             elif not self._check_in_water(lat,lon) and ignore_exception:
@@ -83,7 +83,7 @@ class Routing_Model:
             time = self._current_path.path_data["great_circle_times"][-1]
         u,v = self.find_windspeed_info(lat,lon,time)
         ws_mag = self._windspeed_magnitude_in_knts(u,v)
-        twa = self._find_twa(v,u)
+        twa = self._find_twa(u,v)
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
         distance_nm = boatspeed * (self._timestep)/60
         return distance_nm
@@ -139,8 +139,8 @@ class Routing_Model:
         pass
 
 
-    def _find_twa(self,v:float,u:float):
-        value = self._angle_to_destination_gcr(v,u)
+    def _find_twa(self,u:float,v:float):
+        value = self._angle_to_destination_gcr(u,v)
         bearing = radians(self._current_bearing)
         angle = value - bearing
         if angle > radians(180):
@@ -173,17 +173,31 @@ class Routing_Model:
         else:
             self.visited_points = []
 
-    def isometric(self,lat,lon):
+    def isometric(self,lat,lon,time:datetime,cur_path: list =None):
+        if cur_path is None:
+            cur_path = [(lat,lon,time)]
         if self._current_path._gcr_time == 0:
             return []
         points = []
         for bearing in range(0,360,30):
             self._current_bearing = bearing
-            new_lat =
-            new_lon =
-            if not self._check_in_water(new_lat,new_lon) and (new_lat,new_lon) not in self.visited_points:
-                self.visited_points.append((new_lat,new_lon))
-            self._current_path._gcr_time -= self._timestep
-            new_points = self.isometric(new_lat,new_lon)
-            points.extend(new_points)
+            new_lat,new_lon = self.route_iso_point(self,lat,lon,time)
+            new_time = time + timedelta(minutes=self._timestep)
+            if not self._check_in_water(new_lat,new_lon):
+                if (new_lat,new_lon,new_time) not in self.visited_points:
+                    self.visited_points.append((new_lat,new_lon,new_time))
+                path = cur_path.append((new_lat,new_lon,new_time))
+                self._current_path._gcr_time -= self._timestep
+                new_points = self.isometric(new_lat,new_lon,new_time,path)
+                points.extend(new_points)
         return points
+
+    def route_iso_point(self,lat,lon,time:datetime):
+        u,v = self.find_windspeed_info(lat,lon,time)
+        ws_mag = self._windspeed_magnitude_in_knts(u,v)
+        twa = self._find_twa(u,v)
+        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+        distance_nm = boatspeed * (self._timestep)/60
+        current_point = (lat, lon)
+        new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
+        return (new_lat,new_lon)
