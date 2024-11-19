@@ -45,12 +45,12 @@ class Routing_Model:
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
         self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s),self._current_path.start_time)
         end_point = False
-        bearing = self._angle_to_destination_gcr(delta_lat,delta_lon)
+        self._current_bearing = self._angle_to_destination_gcr(delta_lat,delta_lon)
         gcr_distances = []
         self._current_path._gcr_time = 0
         land_list = []
         while not end_point:
-            lat,lon = self._route_single_point(bearing,True)
+            lat,lon = self._route_single_point(gcr_flag=True)
             if not self._check_in_water(lat,lon) and not ignore_exception:
                 raise OutWaterException(f"point at {lat},{lon} is land ")
             elif not self._check_in_water(lat,lon) and ignore_exception:
@@ -104,14 +104,14 @@ class Routing_Model:
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(current_lat)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
         return distance
 
-    def _route_single_point(self, bearing: int, gcr_flag: bool=False):
+    def _route_single_point(self, gcr_flag: bool=False,lat:int=None,lon:int=None):
         if not gcr_flag:
             distance_nm = self._straight_line_distance()
-            current_point = (self._current_path.path_data["lat"][-1], self._current_path.path_data["lon"][-1])
+            current_point = (lat, lon)
         else:
             distance_nm = self._straight_line_distance(gcr_flag=True) 
             current_point = (self._current_path.path_data["great_circle_lat"][-1], self._current_path.path_data["great_circle_lon"][-1])
-        new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(bearing))
+        new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return new_lat,new_lon
 
     def _windspeed_magnitude_in_knts(self,u:float,v:float)->float:
@@ -169,9 +169,21 @@ class Routing_Model:
         except OutWaterException:
             land = self.create_big_circle_route(True)
         if len(land) != 0:
-            pass
+            self.visited_points = []
         else:
-            pass
+            self.visited_points = []
 
     def isometric(self,lat,lon):
-        pass
+        if self._current_path._gcr_time == 0:
+            return []
+        points = []
+        for bearing in range(0,360,30):
+            self._current_bearing = bearing
+            new_lat =
+            new_lon =
+            if not self._check_in_water(new_lat,new_lon) and (new_lat,new_lon) not in self.visited_points:
+                self.visited_points.append((new_lat,new_lon))
+            self._current_path._gcr_time -= self._timestep
+            new_points = self.isometric(new_lat,new_lon)
+            points.extend(new_points)
+        return points
