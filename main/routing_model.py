@@ -43,7 +43,9 @@ class Routing_Model:
         earth_radius = 6.3781*(10**6) #in meters
         #HaversineFormula
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
-        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s),self._current_path.start_time)
+        start_time = self._current_path.start_time
+        self._current_path.path_data["great_circle_times"].append(start_time)
+        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
         end_point = False
         self._current_bearing = self._angle_to_destination_gcr(delta_lat,delta_lon)
         gcr_distances = []
@@ -57,6 +59,7 @@ class Routing_Model:
                 land_list.append([lat,lon])
             self._current_path.path_data["great_circle_lat"].append(lat)
             self._current_path.path_data["great_circle_lon"].append(lon)
+            self._current_path.path_data["great_circle_times"].append(start_time + timedelta(minutes = 30))
             self._current_path._gcr_time += 30
             gcr_distances.append(self._distance_from_current_to_end(gcr_flag=True))
             if gcr_distances[-1] < 100 or gcr_distances[-1]>gcr_distances[-2]:
@@ -126,9 +129,9 @@ class Routing_Model:
         if dtime.hour not in self._current_grib._data["times"]:
             self._get_new_grib(dtime)
         for i in range(0,len(current_index)):
-            if current_index[i]== "u":
+            if current_index[i]== "10u":
                 u = grib_values_at_point[i]
-            if current_index[i] == "v":
+            if current_index[i] == "10v":
                 v = grib_values_at_point[i]
         return u,v
         
@@ -174,12 +177,14 @@ class Routing_Model:
             self.visited_points = []
 
     def isometric(self,lat,lon,time:datetime,cur_path: list =None):
+        print("1")
         if cur_path is None:
             cur_path = [(lat,lon,time)]
         if self._current_path._gcr_time == 0:
             return []
         points = []
         for bearing in range(0,360,30):
+            print("bearing")
             self._current_bearing = bearing
             new_lat,new_lon = self.route_iso_point(self,lat,lon,time)
             new_time = time + timedelta(minutes=self._timestep)

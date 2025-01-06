@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class PolarFileError(Exception):
     """Exception Raised when the Polar File is non homogenous"""
@@ -16,6 +17,7 @@ class Boat:
         """
         Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
         """
+        filename = os.path.join("Boats",filename)
         with open(filename,"r") as file:
             line_array = file.readlines()
         wind_speeds = []
@@ -52,7 +54,7 @@ class Boat:
 
                 speeds.append(speedholder)
             elif plr_type == "":
-                raise PolarFileNoMetadata
+                raise PolarFileNoMetadata(f"There is no metadata in file: {filename}")
         
         self.data["wind_list"] = wind_speeds 
         self.data["heading_list"] = headings

@@ -40,11 +40,17 @@ class Grib_Modifiers:
         "Updates Folder Path to current time"
         if time is None:
             current_datetime = datetime.datetime.now()
-            os.mkdir(os.path.join("gribs",f"{current_datetime.date()}"))
-            self._current_folder = os.path.join("gribs",f"{current_datetime.date()}",f"{current_datetime.hour}-{current_datetime.minute}-{current_datetime.second}.grib2")
+            try:
+                os.mkdir(os.path.join("gribs",f"{current_datetime.date()}"))
+            except FileExistsError:
+                print("FileExists")
+            self._current_folder = os.path.join("gribs",f"{current_datetime.date().year}-{current_datetime.date().month}-{current_datetime.date().day}",f"{current_datetime.hour}-{current_datetime.minute}-{current_datetime.second}.grib2")
         else:
-            os.mkdir(os.path.join("gribs",f"{time.date()}"))
-            self._current_folder = os.path.join("gribs",f"{time.date()}",f"{time.hour}-{time.minute}-{time.second}.grib2")
+            try:
+                os.mkdir(os.path.join("gribs",f"{time.date()}"))
+            except FileExistsError:
+                print("FileExists")
+            self._current_folder = os.path.join("gribs",f"{time.date().year}-{time.date().month}-{time.date().day}",f"{time.hour}-{time.minute}-{time.second}.grib2")
 
 class ECMWF_API(Grib_Modifiers):
     """ECMWF API grib options, Default Client is Physics driven - IFS, default server is ecmwf, with options for azure"""
@@ -57,6 +63,8 @@ class ECMWF_API(Grib_Modifiers):
             "time": self._get_time(),
             "step": 48,
                          }
+            today = datetime.datetime.today()
+            self.time = datetime.datetime(year = today.year, month = today.month, day = today.day,hour=int(self._get_time()),minute=0)
         else:
             self.time = time
 
@@ -103,7 +111,7 @@ class ECMWF_API(Grib_Modifiers):
             source=f"{self._current_client.source}",
             model=f"{self._current_client.model}",
             type = "fc",
-            param=["u","v"],
+            param=["10u","10v"],
             target=self._current_folder,
             infer_stream_keyword=True,
         )
@@ -354,6 +362,7 @@ class GRIB:
 
     def _find_closest_lat(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
+        index = None
         if str(lat) in self._data["latitudes"]:
             index = self._data["latitudes"].index(str(lat))
         else:
@@ -361,12 +370,18 @@ class GRIB:
                 if float(self._data["latitudes"][i-1]) < lat and float(self._data["latitudes"][i]) > lat:
                     index = i
                     break
-        if index == None:
+        if index is None:
             raise Exception("i dont know whats up")
         return index
     
     def _find_closest_lon(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists returns index"""
+        index = None
+        print("")
+        print("pas")
+        print(self._data["longitudes"])
+        print("Boobies")
+        print("Hha")
         if str(lat) in self._data["longitudes"]:
             index = self._data["longitudes"].index(str(lat))
         else:
@@ -378,7 +393,7 @@ class GRIB:
             raise Exception("i dont know whats up")
         return index
 
-    def read_point_weather(self, lat:float,lon:float,) -> dict:
+    def read_point_weather(self, lat:float,lon:float) -> dict:
         """expect self._data values to be npndarrays 2d"""
         lattitude = self._find_closest_lat(lat)
         longitude = self._find_closest_lon(lon)
