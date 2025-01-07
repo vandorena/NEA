@@ -35,7 +35,21 @@ class Grib_Modifiers:
         self._current_folder = None
         self._update_folder_path()
         self._request = None
-
+    
+    def _get_time(self, time = None) -> int:
+        if time == None:
+            current_datetime = datetime.datetime.now()
+        else:
+            current_datetime = time
+        if current_datetime.hour >= 0 and current_datetime.hour < 6:
+            return "0"
+        elif current_datetime.hour >= 6 and current_datetime.hour < 12:
+            return "6"
+        elif current_datetime.hour >= 12 and current_datetime.hour <18:
+            return "12"
+        else:
+            return "18"
+        
     def _update_folder_path(self, time=None):
         "Updates Folder Path to current time"
         if time is None:
@@ -83,19 +97,7 @@ class ECMWF_API(Grib_Modifiers):
         else:
             return "PHYSICS"
 
-    def _get_time(self, time = None) -> int:
-        if time == None:
-            current_datetime = datetime.datetime.now()
-        else:
-            current_datetime = time
-        if current_datetime.hour >= 0 and current_datetime.hour < 6:
-            return "0"
-        elif current_datetime.hour >= 6 and current_datetime.hour < 12:
-            return "6"
-        elif current_datetime.hour >= 12 and current_datetime.hour <18:
-            return "12"
-        else:
-            return "18"
+    
         
     
         
@@ -122,7 +124,14 @@ class ECMWF_API(Grib_Modifiers):
             self._current_client.source = "azure"
         else:
             self._current_client.source = "ecmwf"
-    
+
+class ICON(Grib_Modifiers):
+    def __init__(self):
+        super().__init__()
+
+
+    def get_file_url(self,time: datetime = None):
+        run_path = f"{time.strftime('%Y%m%d')}{self._get_time(time=time)}"
 
 class GRIB:
 

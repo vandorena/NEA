@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import math
 
 class PolarFileError(Exception):
     """Exception Raised when the Polar File is non homogenous"""
@@ -69,16 +70,21 @@ class Boat:
         return new_list
     
     def _binary_list_class_search(self,input_list: list, search_term: int):
+        print(f"boo   {search_term}")
+        print(input_list)
         list_length = len(input_list)
         current_index = list_length//2
         found = False
         current_comparision = 0
-        max_comparison = np.log2(list_length)
+        max_comparison = np.log2(list_length) -1
         count = 1
         found_index = -1
         while not found:
             if current_comparision <= max_comparison:
-                if input_list[current_index] == search_term:
+                current_comparision += 1
+                if input_list[current_index] == math.floor(search_term):
+                    print(input_list[current_index])
+                    print("this is input_list")
                     found_index = current_index
                     found = True
                 else:
@@ -88,10 +94,16 @@ class Boat:
                     else:
                         current_index = current_index - list_length//(2**count)
             else:
-                for i in range(0,list_length):
+                for i in range(1,list_length-1):
+                    print(i)
+    
                     if input_list[i-1] < search_term and input_list[i] > search_term:
                         found_index = i
+                        print("gttit")
                         found = True
+                        break
+                    print(f"found {found_index}")
+                found = True
         return found_index
                 
     def find_polar_speed(self,windspeed,heading):
@@ -99,7 +111,15 @@ class Boat:
         reference_headings = self._list_to_int(self.data["heading_list"])
         speed_index = self._binary_list_class_search(reference_windspeeds,windspeed)
         heading_index = self._binary_list_class_search(reference_headings,heading)
-        boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
+        try:
+            boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
+        except IndexError:
+            if heading_index < 0 and heading_index < (len(self.data[self.data["wind_list"][speed_index]])):
+                boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index - 1]
+            elif heading_index > (len(self.data[self.data["wind_list"][speed_index]])):
+                boatspeed = self.data[self.data["wind_list"][speed_index]][len(self.data[self.data["wind_list"][speed_index]])-1]
+            else:
+                boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
         return boatspeed
         
         

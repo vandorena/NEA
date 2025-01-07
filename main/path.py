@@ -14,7 +14,7 @@ class Path:
     def __init__(self,start_time: datetime, boat: Boat,start_lattitude: float = 0, start_longitude: float = 0,end_latitude: float=0, end_longitude: float = 0) -> None:
         
         self.start_lattitude = start_lattitude
-        self.end_lattitude = start_longitude
+        self.end_lattitude = end_latitude
         self.start_longitude = start_longitude
         self.end_longitude = end_longitude
         self.start_time = start_time
@@ -45,6 +45,7 @@ class Path:
             "air_pressure":[],
             "ocean_current_direction": [],
             "ocean_current_speed": [],
+            "gcr_start_time": None,
         }
 
     def set_start(self):

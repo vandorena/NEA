@@ -1,28 +1,39 @@
-import openmeteo_requests
+import requests
 import requests_cache
 import retry_requests
 import datetime
 
-def opening_sesh():
-    cached_session = requests_cache.CachedSession('.cache', expire_after = 4000)
-    retry_session = retry_requests(cached_session, retries = 5, backoff_factor = 0.2)
-    meteo = openmeteo_requests.Client(session = retry_session)
-    return meteo
+
 
 def make_10mvu_request(lat,lon,time:datetime):
-    meteo = opening_sesh()
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude":lat,
         "longitude": lon,
-        "minutely_15":["wind_speed_10m","wind_direction_10m"],
-        "timezone": "gmt",
+        "minutely_15":"windspeed_10m,winddirection_10m",
+        "timezone": "UTC",
         "forecast_days": 1
     }
-    response = meteo.weather_api(url, params=params)
-    print(response)
-    first_response = response[0]
-    print(first_response.Minutely15())
+    try:
+        response = requests.get(url,params=params)
+        response_data = response.json()
+        print(response_data)
+    except requests.exceptions.HTTPError:
+        response = requests.get(url,params=params)
+        response_data = response.json()
+        print(response_data)
 
-if __name__ == "_main_":
-    make_10mvu_request(0,0,datetime.datetime.now())
+    index = None
+    difference = datetime.timedelta.max
+
+    for i in range(0,len(response_data["minutely_15"]["time"])):
+        current_datetime = datetime.datetime.fromisoformat(response_data["minutely_15"]["time"][i])
+        delta = abs(current_datetime - time)
+        if delta < difference:
+            difference = delta
+            index = i
+
+    return response_data["minutely_15"]["windspeed_10m"][index], response_data["minutely_15"]["winddirection_10m"][index]
+
+if __name__ == "__main__":
+    print(make_10mvu_request(50,50,datetime.datetime.now()))
