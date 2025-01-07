@@ -6,6 +6,8 @@ from new_boat_bokeh import new_boats
 #from boat_view_bokeh import view_boat
 from subprocess import run
 from os import chmod
+from Interactive_Viewer import viewer
+import os
 
 routes = {
     "/": create_main_page,
@@ -13,6 +15,8 @@ routes = {
     "/new_boat": new_boats,
     #"/grib_manager": gribs,
     #"/view_boat": view_boat,
+    "/routing": viewer,
+
 }
 
 def make_document(doc, app):
@@ -21,8 +25,8 @@ def make_document(doc, app):
 
 def main(): 
     #my code
-    chmod(r"main/startup.sh",0o775)
-    run([r"main/startup.sh","arguments"])
+    chmod(os.path.join("main","startup.sh"),0o775)
+    run([os.path.join("main","startup.sh"),"arguments"])
     #external code
     server = Server(
         {route: (lambda doc, app=app: make_document(doc, app)) for route, app in routes.items()},

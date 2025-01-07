@@ -4,10 +4,11 @@ from bokeh.models import Button
 from bokeh.layouts import row, column
 from bokeh.models import CustomJS
 from bokeh.io import curdoc
+import os
 
 def find_boats():
     global CURRENT_BOATS
-    with open(r"..\Boats\Boat_saves.txt","r") as file:
+    with open(os.path.join("Boats","Boat_saves.txt"),"r") as file:
         boats = file.readlines()
     for i in range(0,len(boats)):
         line_content = boats[i].split()

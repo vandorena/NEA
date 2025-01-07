@@ -13,6 +13,15 @@ def check_network_status():
         globals.NETWORK_STATUS = False
 
 def create_main_page(doc):
+    button_routing = Button(
+        label="Routing Page",
+        button_type=BUTTON_STYLE["type"][1],
+        width=BUTTON_STYLE["width"],
+        height=BUTTON_STYLE["height"],
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    button_routing.js_on_event('button_click',CustomJS(code="window.location.href='/routing'"))
+
     button_boats = Button(
         label="Boats Page",
         button_type=BUTTON_STYLE["type"][0],
@@ -31,5 +40,5 @@ def create_main_page(doc):
         )
     button_grib.js_on_event('button_click',CustomJS(code="window.location.href='/grib_manager'"))
 
-    layout = row(button_boats,button_grib)
+    layout = row(button_routing,button_boats,button_grib)
     doc.add_root(layout)
