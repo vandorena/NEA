@@ -140,6 +140,8 @@ class Routing_Model:
                 print("IndexError")
 
         if not ignore_exception:
+            print(self._current_path.path_data["great_circle_lon"])
+            print(self._current_path.path_data["great_circle_lat"])
             return
         else: 
             return land_list

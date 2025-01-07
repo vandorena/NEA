@@ -17,11 +17,11 @@ def make_10mvu_request(lat,lon,time:datetime):
     try:
         response = requests.get(url,params=params)
         response_data = response.json()
-        print(response_data)
+        #print(response_data)
     except requests.exceptions.HTTPError:
         response = requests.get(url,params=params)
         response_data = response.json()
-        print(response_data)
+        #print(response_data)
 
     index = None
     difference = datetime.timedelta.max
