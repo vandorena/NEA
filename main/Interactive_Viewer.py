@@ -1,5 +1,5 @@
 from bokeh.plotting import figure, show, curdoc
-from bokeh.models import ColumnDataSource, Slider, Button, Dropdown
+from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div
 from bokeh.models.callbacks import CustomJS
 from bokeh.layouts import column,row
 from boats_bokeh import find_boats
@@ -20,6 +20,8 @@ def viewer(doc):
     end_x_changed = False
     end_y_changed =False
 
+    grib_uploaded = False
+
     def create_boat_list()-> list:
         find_boats()
         boat_list =[]
@@ -32,8 +34,16 @@ def viewer(doc):
         return boat_list
 
     def update_boat(event):
+        nonlocal current_boat
         globals.selected_boat = globals.CURRENT_BOATS[event.item]
-        print(globals.selected_boat)#
+        print(globals.selected_boat)
+        current_boat.text = f"Current Boat: {event.item}"
+
+    def update_grib(event):
+        nonlocal current_grib
+        globals.selected_grib = globals.CURRENT_GRIBS[event.item]
+        print(globals.selected_grib)
+        current_grib.text = f"Current GRIB: {event.item}"
 
     def gcr_routing(event):
         nonlocal start_x,start_y,end_x,end_y
@@ -58,6 +68,13 @@ def viewer(doc):
 
     boat_dropdown = Dropdown(label="Select Boat" , button_type="warning", menu=boat_list)
     boat_dropdown.on_event("menu_item_click", update_boat)
+
+    grib_dropdown = Dropdown(label="Select Grib" , button_type="warning", menu=grib_list)
+    grib_dropdown.on_event("menu_item_click", update_grib)
+
+    current_boat = Div(text="You have not selected a boat", height= 70, width = 200)
+    current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 200)
+
 
     button_Start_Routing_Full= Button(
         label="Start Routing",
@@ -95,11 +112,40 @@ def viewer(doc):
         )
     button_Start_Routing_GCR_Grib.on_event('button_click', gcr_grib_routing)
 
+    button_home= Button(
+        label="Homepage",
+        button_type=BUTTON_STYLE["type"][3],
+        width=(BUTTON_STYLE["width"]//3),
+        height=(BUTTON_STYLE["height"]//2),
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    button_home.js_on_event('button_click', CustomJS("window.location.href='/'"))
 
+    button_enable_grib = Button(
+        label="Enable Grib Mode",
+        button_type=BUTTON_STYLE["type"][3],
+        width=(BUTTON_STYLE["width"]//3),
+        height=(BUTTON_STYLE["height"]//2),
+        icon=BUTTON_STYLE["icons"][0]
+        )
+    
+    button_disable_grib = Button(
+        label="Disable Grib Mode",
+        button_type=BUTTON_STYLE["type"][3],
+        width=(BUTTON_STYLE["width"]//3),
+        height=(BUTTON_STYLE["height"]//2),
+        icon=BUTTON_STYLE["icons"][0]
+        )
 
-    layout1 = column(button_Start_Routing_Full,button_Start_Routing_GCR,button_Start_Routing_Full_GRIB,button_Start_Routing_GCR_Grib,boat_dropdown)
-    layout_main = row(plot,layout1)
-    doc.add_root(layout_main)
+    def update_root(enable_grib: bool):
+        if not enable_grib:
+            bottom_row = row(button_home, button_enable_grib)
+            layout1 = column(current_boat, button_Start_Routing_Full,button_Start_Routing_GCR,boat_dropdown,bottom_row)
+        else:
+            bottom_row = row(button_home, button_disable_grib)
+            layout1 = column(current_boat, button_Start_Routing_Full_GRIB, button_Start_Routing_GCR_Grib, boat_dropdown,bottom_row)
+        layout_main = row(plot,layout1)
+        doc.add_root(layout_main)
 
 
 
