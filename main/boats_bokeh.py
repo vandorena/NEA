@@ -1,10 +1,11 @@
 from boats import Boat
 from globals import CURRENT_BOATS, BUTTON_STYLE, selected_boat
-from bokeh.models import Button
+from bokeh.models import Button, Dropdown
 from bokeh.layouts import row, column
 from bokeh.models import CustomJS
 from bokeh.io import curdoc
 import os
+
 
 def find_boats():
     global CURRENT_BOATS
@@ -25,12 +26,30 @@ def boat_button(boat):
 
 
 def boats(doc):
-    global CURRENT_BOATS,BUTTON_STYLE
-    """Need to work on how to dynamically create buttons based on how many boats are there."""
-    find_boats()
     
+    """Need to work on how to dynamically create buttons based on how many boats are there."""
 
 
+    def create_boat_list()-> list:
+        find_boats()
+        boat_list =[]
+        for i in range(0,len(CURRENT_BOATS["boat_list"])):
+            boatname = CURRENT_BOATS["boat_list"][i]
+            print(boatname)
+            print(CURRENT_BOATS[boatname])
+            ntuple = (boatname)
+            boat_list.append(ntuple)
+        return boat_list
+    
+    boat_menu = create_boat_list()
+
+    def select_boat(event):
+        global selected_boat
+        selected_boat = CURRENT_BOATS[event.item]
+        print(selected_boat)
+        print("got this :)")
+
+    
     add_boat = Button(
         label="Add a New Boat",
         button_type=BUTTON_STYLE["type"][0],
@@ -40,34 +59,12 @@ def boats(doc):
         )
     add_boat.js_on_event('button_click',CustomJS(code="window.location.href='/new_boat'"))
 
-    button_list = [add_boat]
-    for i in range(0,len(CURRENT_BOATS["boat_list"])):
-        boat_name = CURRENT_BOATS["boat_list"][i]
-        button = Button(label=boat_name)
-        button.js_on_event("button_click",boat_button(boat_name))
-        button_list.append(button)
+    boat_dropdown = Dropdown(label="Select Boat" , button_type="warning", menu=boat_menu)
+    boat_dropdown.on_event("menu_item_click", select_boat)
+    boat_dropdown.js_on_event("menu_item_click",CustomJS(code="window.location.href='/view_boat'"))
 
-    length_button_list = len(button_list)
-
-    row1=[]
-    row2=[]
-    row3=[]
-
-    for i in range(0,length_button_list):
-        if i % 3 == 0:
-            row1.append(button_list[i])
-        elif i % 3 == 1:
-            row2.append(button_list[i])
-        else:
-            row3.append(button_list[i])
-    
-    first_row = row(row1)
-    second_row = row(row2)
-    third_row = row(row3)
-
-    layout = column(first_row,second_row,third_row)
-
-    doc.add_root(layout)
+    layout1 = row(add_boat,boat_dropdown)
+    doc.add_root(layout1)
     
 
 

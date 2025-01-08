@@ -1,8 +1,9 @@
 import os,datetime
-from globals import CURRENT_TIME,CURRENT_SUBFOLDERS,selected_grib
+from globals import CURRENT_TIME,CURRENT_SUBFOLDERS,selected_grib,CURRENT_GRIBS
 from bokeh.models import Button,CustomJS
 from bokeh.layouts import row, column
 from bokeh.io import curdoc
+from Grib_Options import GRIB
 
 def find_gribs():
     global CURRENT_TIME,CURRENT_SUBFOLDERS
@@ -16,6 +17,14 @@ def find_gribs():
                     new_folder_gribs.remove(new_folder_gribs[i])
             CURRENT_SUBFOLDERS[grib_folder_list[i]] = new_folder_gribs
 
+def find_gribsV2():
+    folder_list = os.listdir(os.path.join("main","GRIBS"))
+    for i in range(0,len(folder_list)):
+        if folder_list[i][-4:] != ".txt":
+            CURRENT_GRIBS["grib_list"].append(folder_list[i])
+            CURRENT_GRIBS[folder_list[i]] = GRIB(folder_list[i])
+        
+
 def grib_button(grib_name):
     global selected_grib
     selected_grib = grib_name
@@ -26,6 +35,8 @@ def grib_button(grib_name):
 def gribs(doc):
     global CURRENT_SUBFOLDERS
     
+    find_gribsV2()
+
     button_list = []
     for i in range(0,len(CURRENT_SUBFOLDERS["subfolder_list"])):
         grib_name = CURRENT_SUBFOLDERS["subfolder_list"][i]
@@ -54,9 +65,6 @@ def gribs(doc):
     layout = column(first_row,second_row,third_row)
 
     doc.add_root(layout)
-
-find_gribs()
-gribs(curdoc())
 
 if __name__ == "__main__":
     find_gribs()

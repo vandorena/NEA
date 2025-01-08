@@ -143,7 +143,7 @@ class GRIB:
         self._extension = self._get_extension()
         self._filename_flag = file_name_flag
         if file_name_flag is None:
-            self._path = os.path.join("gribs",file_name)
+            self._path = os.path.join("GRIBS",file_name)
         else:
             self._path = file_name
         # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
@@ -197,7 +197,7 @@ class GRIB:
     def _check_txt_path(self)->bool:
         self._create_txt_path()
         if self._filename_flag is None:
-            checkpath = os.path.join("gribs",self._filename)
+            checkpath = os.path.join("GRIBS",self._filename)
         values = os.path.exists(checkpath)
         self._restore_filename()
         return values
@@ -223,12 +223,12 @@ class GRIB:
             raise Invalid_grib_extension(f"Extension of {self._filename} is invalid")
         self._filename = self._filename +  ".txt"
         if path_flag == True:
-            self._path = os.path.join("gribs",self._filename)
+            self._path = os.path.join("GRIBS",self._filename)
         return
 
     def _translate_to_txt(self):
         self._create_txt_path()
-        with open(os.path.join("gribs",self._filename),"a") as file:
+        with open(os.path.join("GRIBS",self._filename),"a") as file:
             index_metadata = " ".join(f"{index} " for index in self._data["index"] )
             file.write(index_metadata +"\n")
             shotname_metadata = " ".join(f"{sn} " for sn in self._data["short_name_list"])
@@ -337,7 +337,7 @@ class GRIB:
     
     def read_metadata(self):
         self._create_txt_path()
-        with open(os.path.join("gribs",self._filename),"r") as file:
+        with open(os.path.join("GRIBS",self._filename),"r") as file:
             for i in range(7):
                 current_line = file.readline()
                 if i == 0:
@@ -359,7 +359,7 @@ class GRIB:
     def read_single_line(self,lat:float,lon:float)->list:
         line_number = self._find_line_index(lat,lon)
         self._create_txt_path()
-        with open(os.path.join("gribs",self._filename),"r") as file:
+        with open(os.path.join("GRIBS",self._filename),"r") as file:
             single_line = next(islice(file,line_number,line_number+1),None)
             if single_line != None:
                 print(type(single_line))
@@ -451,7 +451,7 @@ class GRIB:
             self._data["time_list"].append(time)
             print(self._data["time_list"])
         try:
-            if not os.path.exists(os.path.join("gribs","log.txt")):
+            if not os.path.exists(os.path.join("GRIBS","log.txt")):
                 print("No")
                 print(self._data[self._data["index"][1]] )
                 print(self._data[self._data["index"][3]] )
@@ -459,7 +459,7 @@ class GRIB:
                 print(self.ni)
                 print(self._data["longitudes"][-1])
                 print(self._last_long)
-                with open(os.path.join("gribs","log.txt"),"w") as file:
+                with open(os.path.join("GRIBS","log.txt"),"w") as file:
                     file.write(self._data[self._data["index"][1]])
                     file.write("\n \n\n\n")
                     file.write(self._data[self._data["index"][3]])

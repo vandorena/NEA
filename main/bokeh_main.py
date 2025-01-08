@@ -1,9 +1,9 @@
 from bokeh.server.server import Server
 from mainpage import create_main_page
-#from boats_bokeh import boats
+from boats_bokeh import boats
 from new_boat_bokeh import new_boats
-#from grib_manager_bokeh import gribs
-#from boat_view_bokeh import view_boat
+from grib_manager_bokeh import gribs
+from boat_view_bokeh import view_boat
 from subprocess import run
 from os import chmod
 from Interactive_Viewer import viewer
@@ -11,10 +11,10 @@ import os
 
 routes = {
     "/": create_main_page,
-    #"/boats": boats,
+    "/boats": boats,
     "/new_boat": new_boats,
     #"/grib_manager": gribs,
-    #"/view_boat": view_boat,
+    "/view_boat": view_boat,
     "/routing": viewer,
 
 }

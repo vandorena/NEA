@@ -16,11 +16,14 @@ CURRENT_ROUTINGS = {
 CURRENT_BOATS = {
     "boat_list":[]
     }
-selected_boat = "none"
-selected_grib = "none"
+selected_boat = None
+selected_grib = None
 CURRENT_TIME = datetime.datetime.now()
 CURRENT_SUBFOLDERS ={
     "subfolder_list":[]
+}
+CURRENT_GRIBS = {
+    "grib_list":[],
 }
 BASECLIENT_DATA = Client(
     source="ecmwf",
@@ -40,9 +43,9 @@ ICON_LIST=[None]
 mapwidth = 500
 mapheight = 500
 BUTTON_STYLE ={
-    "width":500,
+    "width":300,
     "height":100,
-    "font_size":30,
+    "font_size":80,
     "type": ["default","primary","success","warning","danger","light"],
     "height_policy": "fixed",
     "icons": ICON_LIST,
