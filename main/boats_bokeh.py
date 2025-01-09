@@ -1,10 +1,12 @@
 from boats import Boat
 from globals import CURRENT_BOATS, BUTTON_STYLE, selected_boat
-from bokeh.models import Button, Dropdown
+import globals
+from bokeh.models import Button, Dropdown, Div
 from bokeh.layouts import row, column
 from bokeh.models import CustomJS
 from bokeh.io import curdoc
 import os
+import uuid
 
 
 def find_boats():
@@ -44,10 +46,11 @@ def boats(doc):
     boat_menu = create_boat_list()
 
     def select_boat(event):
-        global selected_boat
-        selected_boat = CURRENT_BOATS[event.item]
+        globals.selected_boat = CURRENT_BOATS[event.item]
         print(selected_boat)
         print("got this :)")
+        dumdum.text = f"{uuid.uuid4()}"
+        print(dumdum.text)
 
     
     add_boat = Button(
@@ -60,10 +63,12 @@ def boats(doc):
     add_boat.js_on_event('button_click',CustomJS(code="window.location.href='/new_boat'"))
 
     boat_dropdown = Dropdown(label="Select Boat" , button_type="warning", menu=boat_menu)
-    boat_dropdown.on_event("menu_item_click", select_boat)
-    boat_dropdown.js_on_event("menu_item_click",CustomJS(code="window.location.href='/view_boat'"))
+    boat_dropdown.on_event("menu_item_click",select_boat)
 
-    layout1 = row(add_boat,boat_dropdown)
+    dumdum = Div(text="None")
+    dumdum.js_on_change("text",CustomJS(code="window.location.href='/view_boat'"))
+
+    layout1 = row(add_boat,boat_dropdown, dumdum)
     doc.add_root(layout1)
     
 

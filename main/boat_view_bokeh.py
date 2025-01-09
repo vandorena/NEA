@@ -1,8 +1,10 @@
 from globals import CURRENT_BOATS, selected_boat, BUTTON_STYLE
+import globals
 import bokeh
 from bokeh.io import curdoc
 from bokeh.layouts import row,column
 from bokeh.models import Button,Div,CustomJS,ColumnDataSource, DataTable, DateFormatter, TableColumn
+import requests
 
 def check_boat(doc):
     try:
@@ -10,6 +12,7 @@ def check_boat(doc):
         boat_object = selected_boat
         
         source = ColumnDataSource(boat_object.data)
+        print(boat_object.data)
         columns = []
         columns.append(TableColumn(field=boat_object.data["heading_list"], title = "Headings (degrees to true wind)"))
         for i in range(0,len(boat_object.data["wind_list"])):
@@ -25,9 +28,11 @@ def check_boat(doc):
         pass
 
 def view_boat(doc):
-    if selected_boat is None:
-        CustomJS(code="window.location.href='/boats")
+    if globals.selected_boat is None:
+        print("Lol you thought")
+        doc.add_root(CustomJS(code="window.location.href='/boats"))
+        doc.clear()
     else:
-        check_boat(doc,selected_boat)
+        check_boat(doc)
 
 check_boat(curdoc())
