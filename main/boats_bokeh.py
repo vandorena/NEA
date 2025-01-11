@@ -1,4 +1,4 @@
-from boats import Boat
+from boats import Boat, PolarFileError
 from globals import CURRENT_BOATS, BUTTON_STYLE, selected_boat
 import globals
 from bokeh.models import Button, Dropdown, Div
@@ -14,12 +14,15 @@ def find_boats():
     with open(os.path.join("Boats","Boat_saves.txt"),"r") as file:
         boats = file.readlines()
     for i in range(0,len(boats)):
-        line_content = boats[i].split()
-        boat = Boat(line_content[0])
-        CURRENT_BOATS["boat_list"].append(line_content[0])
-        boat.add_polar(line_content[1])
-        CURRENT_BOATS[line_content[0]] = boat
-        boat = None
+        try:
+            line_content = boats[i].split()
+            boat = Boat(line_content[0])
+            CURRENT_BOATS["boat_list"].append(line_content[0])
+            boat.add_polar_v2(line_content[1])
+            CURRENT_BOATS[line_content[0]] = boat
+            boat = None
+        except PolarFileError:
+            pass
 
 def boat_button(boat):
     global selected_boat 

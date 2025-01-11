@@ -86,8 +86,8 @@ def viewer(doc):
     grib_dropdown = Dropdown(label="Select Grib" , button_type="warning", menu=grib_list)
     grib_dropdown.on_event("menu_item_click", update_grib)
 
-    current_boat = Div(text="You have not selected a boat", height= 70, width = 200)
-    current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 200)
+    current_boat = Div(text="You have not selected a boat", height= 70, width = 300)
+    current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 300)
 
 
     grib_file_input = FileInput(accept="<.grib>,<.grib2>,<.grb>")

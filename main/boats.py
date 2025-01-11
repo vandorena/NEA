@@ -4,7 +4,7 @@ import math
 
 class PolarFileError(Exception):
     """Exception Raised when the Polar File is non homogenous"""
-class PolarFileNoMetadata(Exception):
+class PolarFileNoMetadata(PolarFileError):
     """"Excetion Raised when the Polar File has no Metadata"""
 
 class Boat:
@@ -18,6 +18,7 @@ class Boat:
         """
         Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
         """
+        #Logic error resulting in speeds being only as long as the number of wind speeds instead of as long as the nuember of headings
         filename = os.path.join("Boats",filename)
         with open(filename,"r") as file:
             line_array = file.readlines()
@@ -25,14 +26,17 @@ class Boat:
         speeds = []
         headings = []
         plr_type = ""
+        #print(line_array)
         for i in range(0,len(line_array)):
             values = line_array[i].split()
+            print(f"values are {values}")
             speedholder = []
             heading_count = 0
             if i == 0:
                 plr_type = values[0]
                 if plr_type == "TWA\TWS":
                     wind_speeds = values[1:]
+                    print(f"{wind_speeds} areeeee")
             if plr_type == "TWA\TWS" and i!=0:
                 headings.append(values[0])
                 speeds.append(values[1:])
@@ -54,14 +58,45 @@ class Boat:
                                 speedholder.append(float(values[j]))
 
                 speeds.append(speedholder)
+        
             elif plr_type == "":
                 raise PolarFileNoMetadata(f"There is no metadata in file: {filename}")
         
         self.data["wind_list"] = wind_speeds 
         self.data["heading_list"] = headings
         for i in range(0,len(wind_speeds)):
+            print(wind_speeds)
             self.data[wind_speeds[i]] = speeds[i]
+        print(self.data)
         return
+
+    def add_polar_v2(self,filename:str):
+        filename = os.path.join("Boats",filename)
+        with open(filename,"r") as file:
+            line_array = file.readlines()
+        polar_filetype = None
+        polar_filetype=(line_array[0].split())[0]
+        if polar_filetype == "TWA\TWS" or polar_filetype=="TWA" or polar_filetype=="TWA/TWS":
+            self.parse_TWA_TWS(line_array)
+        elif polar_filetype == "!Expedition":
+            raise PolarFileError(f"We currently don't support Expedition polar files")
+        else:
+            raise PolarFileNoMetadata(f"There is no metadata in file: {filename}")
+        
+    def parse_TWA_TWS(self,lines:list):
+        self.data["heading_list"] = []
+        for i in range(0,len(lines)):
+            current_line = lines[i].split()
+            if i == 0:
+                self.data["wind_list"] = current_line[1:]
+                for j in range(1,len(current_line)):
+                    self.data[current_line[j]] = []
+            else:
+                self.data["heading_list"].append(current_line[0])
+                for z in range(1,len(current_line)):
+                    current_wind = self.data["wind_list"][z-1]
+                    self.data[current_wind].append(current_line[z])
+               
 
     def _list_to_int(self,list:list):
         new_list = []

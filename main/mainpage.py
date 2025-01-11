@@ -29,7 +29,7 @@ def create_main_page(doc):
         height=BUTTON_STYLE["height"],
         icon=BUTTON_STYLE["icons"][0]
         )
-    button_boats.js_on_event('button_click',CustomJS(code="window.location.href='/boats'"))
+    button_boats.js_on_event('button_click',CustomJS(code="window.location.href='/view_boat'"))
 
     button_grib = Button(
         label="Grib Management Page",

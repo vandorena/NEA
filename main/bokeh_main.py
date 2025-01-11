@@ -11,8 +11,8 @@ import os
 
 routes = {
     "/": create_main_page,
-    "/boats": boats,
-    "/new_boat": new_boats,
+    #"/boats": boats,
+    #"/new_boat": new_boats,
     #"/grib_manager": gribs,
     "/view_boat": view_boat,
     "/routing": viewer,
