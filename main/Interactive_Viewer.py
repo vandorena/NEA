@@ -161,16 +161,69 @@ def viewer(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
+    explainer_div = Div(text="<h1>Select a start and end point</h1><br>")
+
     def enable_grib(event):
         update_root(enable_grib=True)
 
     button_enable_grib.on_event("button_click",enable_grib)
 
-    def on_tap(event):
-        tap_count +=1
+    def update_lines():
+        pass
 
+    def update_div():
+        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed
+        if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
+            explainer_div.text = "<h1>Select a start and end point</h1><br>"
+        if start_x_changed and start_y_changed and not end_x_changed and not end_y_changed:
+            explainer_div.text = (f"<h1> You have not selected an end point</h1><br>"
+                             f"<b>Starting Latitude:</b> {start_y} <br>"
+                             f"<b>Starting Longitude:</b> {start_x} <br>")
+        if start_x_changed and start_y_changed and end_x_changed and end_y_changed:
+            explainer_div.text = (f"<b>Starting Latitude:</b> {start_y} <br>"
+                                  f"<b>Starting Longitude:</b> {start_x} <br>"
+                                  f"<b>End Latitude:</b> {end_y}<br>"
+                                  f"<b>End Longitude;</b> {end_x}<br>")
+        else:
+            print("This shouldn't do this Interactive Viewer.py line 188")
+    def on_tap(event):
+        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed
+        lat,lon = mercator_to_latlon(event.x,event.y)
+        tap_count +=1
         if tap_count == 1:
-            
+            pin_point_source.data = {'x':[], 'y':[], 'color':[]}
+            start_x = lon
+            start_y= lat
+            plot.scatter(x=[lon],y=[lat],size=5,fill_color="red",line_color="yellow",line_width=2)
+            start_x_changed = True
+            start_y_changed = True
+            update_div()
+            update_lines()
+        elif tap_count == 2:
+            pin_point_source.data= {'x':[],'y':[],'color':[]}
+            end_x = lon
+            end_y = lat
+            plot.scatter(x=[lon],y=[lat],size=5,fill_color = 'blue',line_color="yellow",line_width=2)
+            update_div()
+            update_lines()
+            end_x_changed = True
+            end_y_changed = True
+        elif tap_count == 3:
+            pin_point_source.data = {'x':[],'y':[],'colors':[]}
+            plot.renderers = []
+            tap_count = 0
+            start_x = 0
+            end_x = 0
+            start_y = 0
+            end_y = 0
+            start_x_changed = False
+            start_y_changed = False
+            end_x_changed = False
+            end_y_changed = False
+            update_div()
+            update_lines()
+
+    
 
     def update_root(enable_grib: bool):
         doc.clear()
