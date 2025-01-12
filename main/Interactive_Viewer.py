@@ -1,12 +1,13 @@
 from bokeh.plotting import figure, show, curdoc
-from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div, FileInput
+from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div, FileInput, TapTool
 from bokeh.models.callbacks import CustomJS
 from bokeh.layouts import column,row, layout
 from boats_bokeh import find_boats
 import globals
 from globals import BUTTON_STYLE
 from grib_manager_bokeh import find_gribsV2
-
+from bokeh.events import Tap
+import numpy as np
 
 def viewer(doc):
 
@@ -15,6 +16,8 @@ def viewer(doc):
 
     end_x = 0
     end_y = 0
+
+    tap_count = 0
 
     start_x_changed = False
     start_y_changed = False
@@ -69,13 +72,27 @@ def viewer(doc):
     def full_grib_routing(event):
         pass
 
+    def mercator_to_latlon(x, y):
+        r_major = 6378137.000
+        lon = np.degrees(x / r_major)
+        lat = np.degrees(2 * np.arctan(np.exp(y / r_major)) - np.pi / 2)
+        return lat, lon
+
     plot = figure(x_range=(-2000000, 2000000), y_range=(1000000, 7000000),
             x_axis_type="mercator", y_axis_type="mercator", width = 1500, height = 900)
 
     plot.add_tile("CartoDB Positron", retina=True)
+    
+    plot.add_tools(TapTool())
+
+    pin_point_source = ColumnDataSource(data={'x':[],'y':[],'color':[]})
+    plot.scatter(x='x',y='y',source=pin_point_source,color='color',size=10)
 
     great_circle_source = ColumnDataSource(data={'x':[], 'y':[]})
-    plot.line('x','y', source = great_circle_source, color="red", legend_label="Great Circle Route")
+    plot.line(x='x',y='y', source = great_circle_source, color="red", legend_label="Great Circle Route")
+
+    optimum_route_source = ColumnDataSource(data={'x':[],'y':[]})
+    plot.line(x='x',y='y',source=optimum_route_source,color='pink')
     
     boat_list = create_boat_list()
     grib_list = create_grib_list()
@@ -88,7 +105,6 @@ def viewer(doc):
 
     current_boat = Div(text="You have not selected a boat", height= 70, width = 300)
     current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 300)
-
 
     grib_file_input = FileInput(accept="<.grib>,<.grib2>,<.grb>")
 
@@ -149,6 +165,12 @@ def viewer(doc):
         update_root(enable_grib=True)
 
     button_enable_grib.on_event("button_click",enable_grib)
+
+    def on_tap(event):
+        tap_count +=1
+
+        if tap_count == 1:
+            
 
     def update_root(enable_grib: bool):
         doc.clear()
