@@ -8,14 +8,25 @@ from globals import BUTTON_STYLE
 from grib_manager_bokeh import find_gribsV2
 from bokeh.events import Tap
 import numpy as np
+from global_land_mask.globe import is_ocean
+
+class NotWaterError(Exception):
+    "Exception Governing if a point is not in water"
 
 def viewer(doc):
+
 
     start_x = 0
     start_y = 0
 
     end_x = 0
     end_y = 0
+
+    prev_start_x = 0
+    prev_start_y = 0
+
+    prev_end_x = 0
+    prev_end_y = 0
 
     tap_count = 0
 
@@ -27,6 +38,7 @@ def viewer(doc):
     grib_uploaded = False
 
     input_warning = False
+    water_warning = False
 
     x_input_nonlocal = ""
     y_input_nonlocal = ""
@@ -36,8 +48,8 @@ def viewer(doc):
         boat_list =[]
         for i in range(0,len(globals.CURRENT_BOATS["boat_list"])):
             boatname = globals.CURRENT_BOATS["boat_list"][i]
-            print(boatname)
-            print(globals.CURRENT_BOATS[boatname])
+            #print(boatname)
+            #print(globals.CURRENT_BOATS[boatname])
             ntuple = (boatname)
             boat_list.append(ntuple)
         return boat_list
@@ -47,8 +59,8 @@ def viewer(doc):
         grib_list =[]
         for i in range(0,len(globals.CURRENT_GRIBS["grib_list"])):
             gribname = globals.CURRENT_GRIBS["grib_list"][i]
-            print(gribname)
-            print(globals.CURRENT_BOATS[gribname])
+            #print(gribname)
+            #print(globals.CURRENT_BOATS[gribname])
             ntuple = (gribname)
             grib_list.append(ntuple)
         return grib_list
@@ -56,13 +68,13 @@ def viewer(doc):
     def update_boat(event):
         nonlocal current_boat
         globals.selected_boat = globals.CURRENT_BOATS[event.item]
-        print(globals.selected_boat)
+        #print(globals.selected_boat)
         current_boat.text = f"Current Boat: {event.item}"
 
     def update_grib(event):
         nonlocal current_grib
         globals.selected_grib = globals.CURRENT_GRIBS[event.item]
-        print(globals.selected_grib)
+        #print(globals.selected_grib)
         current_grib.text = f"Current GRIB: {event.item}"
 
     def update_x_input(attr,old,new):
@@ -181,6 +193,8 @@ def viewer(doc):
     y_input = TextInput(title = 'Y:')
     y_input.on_change('value',update_y_input)
 
+    water_warning_div = Div(text="")
+
     point_enter_button = Button(
         label="Create Starting Point",
         button_type=BUTTON_STYLE["type"][2],
@@ -211,7 +225,7 @@ def viewer(doc):
         pass
 
     def update_div():
-        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,x_input_div,y_input_div
+        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,x_input_div,y_input_div, input_warning,water_warning
         #print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
         if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
             explainer_div.text = "<h1>Select a start and end point</h1><br>"
@@ -238,14 +252,23 @@ def viewer(doc):
             print("This shouldn't do this Interactive Viewer.py line 188")
         if input_warning:
             input_warning_div.text = "<h1> Only number inputs are allowed.</h1><br> <b> Ensure all inputs are of decimal form, i.e. 51.231323</b><br>"
+            input_warning = False
         else:
             input_warning_div.text = ""
+        if water_warning:
+            water_warning_div.text = "<h1> You can only place points in water. </h1> <br>"
+            water_warning = False
+        else:
+            water_warning_div.text = ""
 
     def manual_input(event):
-        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,input_warning, x_input_nonlocal,y_input_nonlocal,x_input,y_input
+        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,input_warning, x_input_nonlocal,y_input_nonlocal,x_input,y_input,water_warning
         original_tap_count = tap_count
         try:
             lon,lat = float(x_input_nonlocal),float(y_input_nonlocal)
+            if not is_ocean(lat,lon):
+                water_warning = True
+                raise ValueError
             tap_count += 1
             x,y = lat_lon_to_web_mercator(lat,lon)
             if tap_count == 1:
@@ -277,48 +300,61 @@ def viewer(doc):
             update_div()
     
     def on_tap(event):
-        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed
-        lon,lat = event.x,event.y
-        tap_count +=1
-        if tap_count == 1:
-            pin_point_source.data = {'x':[], 'y':[], 'color':[]}
-            start_x = lon
-            start_y= lat
-            plot.scatter(x=[start_x],y=[start_y],size=10,fill_color="red",line_color="yellow",line_width=1)
-            start_x_changed = True
-            start_y_changed = True
+        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,water_warning
+        original_tap_count = tap_count
+        x,y = event.x,event.y
+        try:
+            tap_count +=1
+            lat,lon = web_mercator_to_lat_lon(x,y)
+            if not is_ocean(lat,lon) and tap_count !=3:
+                raise NotWaterError
+            if tap_count == 1:
+                pin_point_source.data = {'x':[], 'y':[], 'color':[]}
+                start_x =x
+                start_y= y
+                plot.scatter(x=[start_x],y=[start_y],size=10,fill_color="red",line_color="yellow",line_width=1)
+                start_x_changed = True
+                start_y_changed = True
+                update_div()
+                update_lines()
+            elif tap_count == 2:
+                pin_point_source.data= {'x':[],'y':[],'color':[]}
+                end_x = x
+                end_y = y
+                end_x_changed = True
+                end_y_changed = True
+                plot.scatter(x=[end_x],y=[end_y],size=10,fill_color = 'blue',line_color="yellow",line_width=1)
+                update_div()
+                update_lines()
+                
+            elif tap_count == 3:
+                pin_point_source.data = {'x':[],'y':[],'colors':[]}
+                plot.renderers = []
+                plot.add_tile("CartoDB Positron", retina=True)
+                tap_count = 0
+                prev_start_x = start_x
+                prev_start_y = start_y
+                prev_end_x = end_x
+                prev_end_y = end_y
+                start_x = 0
+                end_x = 0
+                start_y = 0
+                end_y = 0
+                start_x_changed = False
+                start_y_changed = False
+                end_x_changed = False
+                end_y_changed = False
+                update_div()
+                update_lines()
+        except NotWaterError:
+            water_warning = True
+            tap_count = original_tap_count
             update_div()
-            update_lines()
-        elif tap_count == 2:
-            pin_point_source.data= {'x':[],'y':[],'color':[]}
-            end_x = lon
-            end_y = lat
-            end_x_changed = True
-            end_y_changed = True
-            plot.scatter(x=[end_x],y=[end_y],size=10,fill_color = 'blue',line_color="yellow",line_width=1)
-            update_div()
-            update_lines()
-            
-        elif tap_count == 3:
-            pin_point_source.data = {'x':[],'y':[],'colors':[]}
-            plot.renderers = []
-            plot.add_tile("CartoDB Positron", retina=True)
-            tap_count = 0
-            start_x = 0
-            end_x = 0
-            start_y = 0
-            end_y = 0
-            start_x_changed = False
-            start_y_changed = False
-            end_x_changed = False
-            end_y_changed = False
-            update_div()
-            update_lines()
 
     plot.on_event(Tap,on_tap)
     point_enter_button.on_event("button_click",manual_input)
 
-    manual_inputs = column(x_input_div,x_input,y_input_div,y_input,point_enter_button)
+    manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button)
 
     def update_root(enable_grib: bool):
         doc.clear()
