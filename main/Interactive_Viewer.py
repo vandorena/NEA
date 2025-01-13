@@ -1,5 +1,5 @@
 from bokeh.plotting import figure, show, curdoc
-from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div, FileInput, TapTool, TextInput
+from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div, FileInput, TapTool, TextInput, DatetimePicker
 from bokeh.models.callbacks import CustomJS
 from bokeh.layouts import column,row, layout
 from boats_bokeh import find_boats
@@ -9,12 +9,15 @@ from grib_manager_bokeh import find_gribsV2
 from bokeh.events import Tap
 import numpy as np
 from global_land_mask.globe import is_ocean
+import datetime
+import pandas
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
 
 def viewer(doc):
 
+    start_time = None
 
     start_x = 0
     start_y = 0
@@ -32,6 +35,7 @@ def viewer(doc):
 
     start_x_changed = False
     start_y_changed = False
+    start_time_changed = False
     end_x_changed = False
     end_y_changed =False
 
@@ -42,6 +46,13 @@ def viewer(doc):
 
     x_input_nonlocal = ""
     y_input_nonlocal = ""
+
+    def check_current_path():
+        cur_path = globals.current_path
+        cur_path_start_lat = cur_path.start_lattitude
+        cur_path_start_lon = cur_path.start_longitude
+        cur_path_end_lat = cur_path.end_lattitude
+        cur_path_end_lon = cur_path.end_longitude
 
     def create_boat_list()-> list:
         find_boats()
@@ -207,7 +218,21 @@ def viewer(doc):
     def enable_grib(event):
         update_root(enable_grib=True)
 
+    def round_to_minute(dt:datetime.datetime):
+        pandas_datetime = pandas.to_datetime(dt)
+        rounded_pandas_datetime = pandas_datetime.round("1Min")
+        return rounded_pandas_datetime.to_pydatetime()
+
+    def add_x_days(dt:datetime.datetime,x:int):
+        return dt+datetime.timedelta(days=x)
+
+
+
     button_enable_grib.on_event("button_click",enable_grib)
+
+    start_time_picker = DatetimePicker(title="Select Start Time",value=round_to_minute(datetime.datetime.now()), min_date=round_to_minute(datetime.datetime.now()), max_date=add_x_days(round_to_minute(datetime.datetime.now()),globals.max_days_future))
+    
+    start_time_div = Div(text=f"<b> Start Time is {start_time}</b><br>")
 
     def web_mercator_to_lat_lon(x:float,y:float):
         radius_of_earth_Spherical_Projection = 6378137
@@ -225,7 +250,7 @@ def viewer(doc):
         pass
 
     def update_div():
-        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,x_input_div,y_input_div, input_warning,water_warning
+        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,x_input_div,y_input_div, input_warning,water_warning,start_time_changed,start_time,start_time_div
         #print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
         if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
             explainer_div.text = "<h1>Select a start and end point</h1><br>"
@@ -260,7 +285,11 @@ def viewer(doc):
             water_warning = False
         else:
             water_warning_div.text = ""
+        if start_time_changed:
+            start_time_changed = False
+            start_time_div.text=f"<b>Start time is: {start_time.strftime("%Y-%m-%d %H:%M:%S")}</b><br> "
 
+    
     def manual_input(event):
         nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,input_warning, x_input_nonlocal,y_input_nonlocal,x_input,y_input,water_warning
         original_tap_count = tap_count
@@ -351,8 +380,15 @@ def viewer(doc):
             tap_count = original_tap_count
             update_div()
 
+    def update_start_time(attr,old,new):
+        start_time = new
+        start_time_changed = True
+        update_div()
+
+
     plot.on_event(Tap,on_tap)
     point_enter_button.on_event("button_click",manual_input)
+    start_time_picker.on_change('value',update_start_time)
 
     manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button)
 
