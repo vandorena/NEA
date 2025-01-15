@@ -9,9 +9,8 @@ SETTINGS = {
     "maximum_wave_height": 10, #in meters
     "maximum_distance_from_centerline" : 5 #in degrees
     }
-CURRENT_ROUTINGS = {
-    "routing_list:[]"
-}
+current_path = None
+max_days_future = 3
 # Routings are Path objects
 CURRENT_BOATS = {
     "boat_list":[]

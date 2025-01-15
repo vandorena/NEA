@@ -138,46 +138,47 @@ class GRIB:
     def __init__(self, file_name:str, file_name_flag = None) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._filename = file_name
-        self.ni = 0
-        self.nj = 0
-        self._extension = self._get_extension()
-        self._filename_flag = file_name_flag
-        if file_name_flag is None:
-            self._path = os.path.join("GRIBS",file_name)
-        else:
-            self._path = file_name
-        # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
-        self._path_ok = True
-        if not os.path.exists(self._path):
-            self._path_ok = False
-            print(1)
-            raise FileNotFoundError(f"Couldn't find a grib file at {self._path}")
-        else:
-            print(2)
-            if not self._check_txt_path():
-                print(1)
-                print(self._filename)
-                if self._check_grib_path():
-                    self._data = {
-                        "index": [],
-                        "short_name_list":[],
-                        "times":[],
-                        "level_list": [],
-                        "time_list": [],
-                        "date_list":[],
-                    }
-                    self._data_list = None
-                    self._datetime = None
-                    self._read_all()
-                    self._translate_to_txt()
-                    print(self._data["time_list"])
-                else:
-                    raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
+        if self._filename != "dummy.grib2":
+            self.ni = 0
+            self.nj = 0
+            self._extension = self._get_extension()
+            self._filename_flag = file_name_flag
+            if file_name_flag is None:
+                self._path = os.path.join("GRIBS",file_name)
             else:
-                self._data = {}
-                self.read_metadata()
-                print(self._data)
-                print("yay")
+                self._path = file_name
+            # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
+            self._path_ok = True
+            if not os.path.exists(self._path):
+                self._path_ok = False
+                print(1)
+                raise FileNotFoundError(f"Couldn't find a grib file at {self._path}")
+            else:
+                print(2)
+                if not self._check_txt_path():
+                    print(1)
+                    print(self._filename)
+                    if self._check_grib_path():
+                        self._data = {
+                            "index": [],
+                            "short_name_list":[],
+                            "times":[],
+                            "level_list": [],
+                            "time_list": [],
+                            "date_list":[],
+                        }
+                        self._data_list = None
+                        self._datetime = None
+                        self._read_all()
+                        self._translate_to_txt()
+                        print(self._data["time_list"])
+                    else:
+                        raise FileNotFoundError(f"Could not find a grib file with the filename {self._filename}")
+                else:
+                    self._data = {}
+                    self.read_metadata()
+                    print(self._data)
+                    print("yay")
 
     def _check_grib_path(self)->bool:
         pathcheck = os.path.exists(self._path)

@@ -11,6 +11,9 @@ import numpy as np
 from global_land_mask.globe import is_ocean
 import datetime
 import pandas
+from path import Path
+from Grib_Options import GRIB
+from routing_model import Routing_Model
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
@@ -47,12 +50,45 @@ def viewer(doc):
     x_input_nonlocal = ""
     y_input_nonlocal = ""
 
+    plot_colors = ["yellow","red","blue","green","purple","orange","black","pink","brown"]
+
+    grib_mode = False
+
+    def web_mercator_to_lat_lon(x:float,y:float):
+        radius_of_earth_Spherical_Projection = 6378137
+        new_x_lon = np.degrees(x / radius_of_earth_Spherical_Projection)
+        new_y_lat = np.degrees(2 * np.arctan(np.exp(y / radius_of_earth_Spherical_Projection)) - np.pi / 2)
+        return new_y_lat, new_x_lon
+
+    def lat_lon_to_web_mercator(lat:float,lon:float):
+        radius_of_earth_Spherical_Projection = 6378137
+        x = np.radians(lon) * radius_of_earth_Spherical_Projection
+        y = radius_of_earth_Spherical_Projection * np.log(np.tan((np.radians(lat)+np.pi/2)/2))
+        return x,y
+
+
     def check_current_path():
+        nonlocal start_x,start_y,end_x,end_y,start_time
+        cur_boat = globals.selected_boat
         cur_path = globals.current_path
         cur_path_start_lat = cur_path.start_lattitude
         cur_path_start_lon = cur_path.start_longitude
         cur_path_end_lat = cur_path.end_lattitude
         cur_path_end_lon = cur_path.end_longitude
+        cur_path_start_time = cur_path.start_time
+        cur_path_start_x, cur_path_start_y = lat_lon_to_web_mercator(cur_path_start_lat,cur_path_start_lon)
+        cur_path_end_x, cur_path_end_y = lat_lon_to_web_mercator(cur_path_end_lat,cur_path_end_lon)
+        cur_path_boat = cur_path.current_boat
+        if cur_path_start_x != start_x or cur_path_start_y != start_y or cur_path_end_x != end_x or cur_path_end_y != end_y or cur_path_start_time or cur_path_boat != cur_boat:
+            start_lat,start_lon = web_mercator_to_lat_lon(start_x,start_y)
+            end_lat, end_lon = web_mercator_to_lat_lon(end_x,end_y)
+            try:
+                globals.current_path = Path(start_time=start_time,start_lattitude=start_lat,start_longitude = start_lon,end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
+            except ValueError:
+                globals.current_path = Path(start_time=datetime.datetime.now(),start_lattitude=start_lat,start_longitude = start_lon,end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
+
+        
+
 
     def create_boat_list()-> list:
         find_boats()
@@ -216,6 +252,8 @@ def viewer(doc):
     
 
     def enable_grib(event):
+        nonlocal grib_mode
+        grib_mode = True
         update_root(enable_grib=True)
 
     def round_to_minute(dt:datetime.datetime):
@@ -234,18 +272,7 @@ def viewer(doc):
     
     start_time_div = Div(text=f"<b> Start Time is {start_time}</b><br>")
 
-    def web_mercator_to_lat_lon(x:float,y:float):
-        radius_of_earth_Spherical_Projection = 6378137
-        new_x_lon = np.degrees(x / radius_of_earth_Spherical_Projection)
-        new_y_lat = np.degrees(2 * np.arctan(np.exp(y / radius_of_earth_Spherical_Projection)) - np.pi / 2)
-        return new_y_lat, new_x_lon
-
-    def lat_lon_to_web_mercator(lat:float,lon:float):
-        radius_of_earth_Spherical_Projection = 6378137
-        x = np.radians(lon) * radius_of_earth_Spherical_Projection
-        y = radius_of_earth_Spherical_Projection * np.log(np.tan((np.radians(lat)+np.pi/2)/2))
-        return x,y
-
+    
     def update_lines():
         pass
 
@@ -287,7 +314,7 @@ def viewer(doc):
             water_warning_div.text = ""
         if start_time_changed:
             start_time_changed = False
-            start_time_div.text=f"<b>Start time is: {start_time.strftime("%Y-%m-%d %H:%M:%S")}</b><br> "
+            start_time_div.text=f"<b>Start time is: {start_time.strftime('%Y-%m-%d %H:%M:%S')}</b><br> "
 
     
     def manual_input(event):
@@ -385,12 +412,21 @@ def viewer(doc):
         start_time_changed = True
         update_div()
 
+    def find_gcr_single():
+        check_current_path()
+        cur_path = globals.current_path
+        if grib_mode:
+            cur_grib = globals.selected_grib
+        else:
+            cur_grib = GRIB("dummy.grib2")
+        routing = Routing_Model()
+
 
     plot.on_event(Tap,on_tap)
     point_enter_button.on_event("button_click",manual_input)
     start_time_picker.on_change('value',update_start_time)
 
-    manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button)
+    manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button,start_time_picker)
 
     def update_root(enable_grib: bool):
         doc.clear()
@@ -406,6 +442,8 @@ def viewer(doc):
         doc.add_root(layout_main)
 
     def update_root_false():
+        nonlocal grib_mode
+        grib_mode = False
         update_root(False)
     
     button_disable_grib = Button(

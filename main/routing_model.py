@@ -15,6 +15,9 @@ class PathError(Exception):
 class OutWaterException(Exception):
     "Exception to break if a point is not in water"
 
+class ContinuedOutWaterException(OutWaterException):
+    "Exception raised when land is continuously detected"
+
 class Routing_Model:
     
     def __init__(self, path: Path,grib:GRIB) -> None:
@@ -57,7 +60,9 @@ class Routing_Model:
             if not self._check_in_water(lat,lon) and not ignore_exception:
                 raise OutWaterException(f"point at {lat},{lon} is land ")
             elif not self._check_in_water(lat,lon) and ignore_exception:
-                land_list.append([lat,lon])
+                raise ContinuedOutWaterException
+            #elif not self._check_in_water(lat,lon) and ignore_exception:
+             #   land_list.append([lat,lon])
             self._current_path.path_data["great_circle_lat"].append(lat)
             self._current_path.path_data["great_circle_lon"].append(lon)
             self._current_path.path_data["great_circle_times"].append(start_time + timedelta(minutes = 30))
@@ -72,8 +77,11 @@ class Routing_Model:
                 end_point = True
         if not ignore_exception:
             return
-        else: 
-            return land_list
+        #else: 
+         #   return land_list
+
+    
+
 
     def _straight_line_distance(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
@@ -146,7 +154,37 @@ class Routing_Model:
         else: 
             return land_list
 
-    
+    def create_big_circle_route_online_v2(self):
+        #print("Creating Big Cirlce")
+        #print(self._current_path.start_lattitude)
+        #print(self._current_path.end_lattitude)
+        lat_s, lon_s , lat_e , lon_e = map(radians,[self._current_path.start_lattitude,self._current_path.start_longitude,self._current_path.end_lattitude,self._current_path.end_longitude])
+        delta_lat = lat_e - lat_s
+        delta_lon = lon_e - lon_s
+        earth_radius = 6.3781*(10**6) #in meters
+        #HaversineFormula
+        distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
+        start_time = self._current_path.start_time
+        self._current_path.path_data["great_circle_times"].append(start_time)
+        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
+        end_point = False
+        self._current_bearing = degrees(self._angle_to_destination_gcr(delta_lat,delta_lon))
+        gcr_distances = []
+        self._current_path._gcr_time = 0
+        exit_land = False
+        while not end_point:
+                lat,lon = self._route_single_point_online(True)
+                if not self._check_in_water(lat,lon) and exit_land:
+                    raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {self._current_path.path_data['great_circle_lat'][-1]},{self._current_path.path_data['great_circle_lon'][-1]} ")
+                if not self._check_in_water(lat,lon) and 
+                self._current_path.path_data["great_circle_lat"].append(lat)
+                self._current_path.path_data["great_circle_lon"].append(lon)
+                self._current_path.path_data["great_circle_times"].append(start_time + timedelta(minutes = 30))
+                self._current_path._gcr_time += 30
+                gcr_distances.append(self._distance_from_current_to_end(gcr_flag=True))
+        
+
+            
     def _straight_line_distance_online(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
         if not gcr_flag:
