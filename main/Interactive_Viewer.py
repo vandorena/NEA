@@ -3,6 +3,7 @@ from bokeh.models import ColumnDataSource, Slider, Button, Dropdown, Div, FileIn
 from bokeh.models.callbacks import CustomJS
 from bokeh.layouts import column,row, layout
 from boats_bokeh import find_boats
+from boats import Boat
 import globals
 from globals import BUTTON_STYLE
 from grib_manager_bokeh import find_gribsV2
@@ -13,17 +14,21 @@ import datetime
 import pandas
 from path import Path
 from Grib_Options import GRIB
-from routing_model import Routing_Model
+from routing_model import Routing_Model, ContinuedOutWaterException
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
 
 def viewer(doc):
 
-    start_time = None
+    start_time = (datetime.datetime.now() + datetime.timedelta(minutes=2))
 
     start_x = 0
     start_y = 0
+
+    default_boat = Boat("Imoca60")
+    default_boat.add_polar_v2("Imoca60.pol")
+    globals.selected_boat = default_boat
 
     end_x = 0
     end_y = 0
@@ -47,10 +52,13 @@ def viewer(doc):
     input_warning = False
     water_warning = False
 
+    land_hit = False
+
     x_input_nonlocal = ""
     y_input_nonlocal = ""
 
     plot_colors = ["yellow","red","blue","green","purple","orange","black","pink","brown"]
+    current_color = 0
 
     grib_mode = False
 
@@ -71,23 +79,27 @@ def viewer(doc):
         nonlocal start_x,start_y,end_x,end_y,start_time
         cur_boat = globals.selected_boat
         cur_path = globals.current_path
-        cur_path_start_lat = cur_path.start_lattitude
-        cur_path_start_lon = cur_path.start_longitude
-        cur_path_end_lat = cur_path.end_lattitude
-        cur_path_end_lon = cur_path.end_longitude
-        cur_path_start_time = cur_path.start_time
-        cur_path_start_x, cur_path_start_y = lat_lon_to_web_mercator(cur_path_start_lat,cur_path_start_lon)
-        cur_path_end_x, cur_path_end_y = lat_lon_to_web_mercator(cur_path_end_lat,cur_path_end_lon)
-        cur_path_boat = cur_path.current_boat
+        if cur_path is not None:
+            cur_path_start_lat = cur_path.start_lattitude
+            cur_path_start_lon = cur_path.start_longitude
+            cur_path_end_lat = cur_path.end_lattitude
+            cur_path_end_lon = cur_path.end_longitude
+            cur_path_start_time = cur_path.start_time
+            cur_path_start_x, cur_path_start_y = lat_lon_to_web_mercator(cur_path_start_lat,cur_path_start_lon)
+            cur_path_end_x, cur_path_end_y = lat_lon_to_web_mercator(cur_path_end_lat,cur_path_end_lon)
+            cur_path_boat = cur_path.current_boat
+        else:
+            cur_path_start_x,cur_path_start_y = 1,1
+            cur_path_end_x,cur_path_end_y = 2,2
+            cur_path_boat = cur_boat
         if cur_path_start_x != start_x or cur_path_start_y != start_y or cur_path_end_x != end_x or cur_path_end_y != end_y or cur_path_start_time or cur_path_boat != cur_boat:
             start_lat,start_lon = web_mercator_to_lat_lon(start_x,start_y)
             end_lat, end_lon = web_mercator_to_lat_lon(end_x,end_y)
+        
             try:
                 globals.current_path = Path(start_time=start_time,start_lattitude=start_lat,start_longitude = start_lon,end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
             except ValueError:
                 globals.current_path = Path(start_time=datetime.datetime.now(),start_lattitude=start_lat,start_longitude = start_lon,end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
-
-        
 
 
     def create_boat_list()-> list:
@@ -174,6 +186,7 @@ def viewer(doc):
     current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 300)
 
     input_warning_div = Div(text="")
+    land_warning_div = Div(text="")
 
     grib_file_input = FileInput(accept="<.grib>,<.grib2>,<.grb>")
 
@@ -202,7 +215,6 @@ def viewer(doc):
         height=BUTTON_STYLE["height"],
         icon=BUTTON_STYLE["icons"][0]
         )
-    button_Start_Routing_GCR.on_event('button_click', gcr_routing)
 
     button_Start_Routing_GCR_Grib= Button(
         label="Find Great Circle Route using GRIB",
@@ -211,7 +223,7 @@ def viewer(doc):
         height=BUTTON_STYLE["height"],
         icon=BUTTON_STYLE["icons"][0]
         )
-    button_Start_Routing_GCR_Grib.on_event('button_click', gcr_grib_routing)
+    
 
     button_home= Button(
         label="Homepage",
@@ -268,7 +280,7 @@ def viewer(doc):
 
     button_enable_grib.on_event("button_click",enable_grib)
 
-    start_time_picker = DatetimePicker(title="Select Start Time",value=round_to_minute(datetime.datetime.now()), min_date=round_to_minute(datetime.datetime.now()), max_date=add_x_days(round_to_minute(datetime.datetime.now()),globals.max_days_future))
+    start_time_picker = DatetimePicker(title="Select Start Time",value=start_time, min_date=round_to_minute(datetime.datetime.now()), max_date=add_x_days(round_to_minute(datetime.datetime.now()),globals.max_days_future))
     
     start_time_div = Div(text=f"<b> Start Time is {start_time}</b><br>")
 
@@ -277,7 +289,7 @@ def viewer(doc):
         pass
 
     def update_div():
-        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,x_input_div,y_input_div, input_warning,water_warning,start_time_changed,start_time,start_time_div
+        nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,land_hit,x_input_div,y_input_div, input_warning,water_warning,start_time_changed,start_time,start_time_div
         #print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
         if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
             explainer_div.text = "<h1>Select a start and end point</h1><br>"
@@ -315,6 +327,11 @@ def viewer(doc):
         if start_time_changed:
             start_time_changed = False
             start_time_div.text=f"<b>Start time is: {start_time.strftime('%Y-%m-%d %H:%M:%S')}</b><br> "
+        if land_hit:
+            land_hit = False
+            cur_path = globals.current_path
+            land_warning_div.text = f"Land was hit at ({cur_path.path_data['great_circle_lat'][-2]},{cur_path.path_data['great_circle_lon'][-2]}) and again at ({cur_path.path_data['great_circle_lat'][-1]},{cur_path.path_data['great_circle_lon'][-1]})"
+
 
     
     def manual_input(event):
@@ -359,6 +376,7 @@ def viewer(doc):
         nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,water_warning
         original_tap_count = tap_count
         x,y = event.x,event.y
+        water_overide = False
         try:
             tap_count +=1
             lat,lon = web_mercator_to_lat_lon(x,y)
@@ -377,6 +395,10 @@ def viewer(doc):
                 pin_point_source.data= {'x':[],'y':[],'color':[]}
                 end_x = x
                 end_y = y
+                mag_delt_x = ((end_x-start_x)**2 + (end_y-start_y)**2)**(0.5)
+                if mag_delt_x < 50000:
+                    water_overide = True
+                    raise NotWaterError # In this case used as an elegant break
                 end_x_changed = True
                 end_y_changed = True
                 plot.scatter(x=[end_x],y=[end_y],size=10,fill_color = 'blue',line_color="yellow",line_width=1)
@@ -404,22 +426,44 @@ def viewer(doc):
                 update_lines()
         except NotWaterError:
             water_warning = True
+            if water_overide:
+                water_warning = False
+                water_overide = False
             tap_count = original_tap_count
             update_div()
 
     def update_start_time(attr,old,new):
+        nonlocal start_time
         start_time = new
         start_time_changed = True
+        update_datetime_picker(start_time)
         update_div()
 
     def find_gcr_single():
+        nonlocal current_color,plot_colors
         check_current_path()
         cur_path = globals.current_path
         if grib_mode:
             cur_grib = globals.selected_grib
         else:
             cur_grib = GRIB("dummy.grib2")
-        routing = Routing_Model()
+        routing = Routing_Model(path=cur_path,grib=cur_grib)
+        if grib_mode:
+            routing.create_big_circle_route()
+        else:
+            try:
+                routing.create_big_circle_route_online_v2()
+            except ContinuedOutWaterException:
+                land_hit = True
+                print(f"Hit land with {cur_path.path_data}")
+                update_div()
+        lats = cur_path.path_data['great_circle_lat']
+        lons = cur_path.path_data['great_circle_lon']
+        xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+        print(f"xs and ys {xs},{ys}")
+        source = ColumnDataSource({'x':xs,'y':ys})
+        plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+        current_color +=1
 
 
     plot.on_event(Tap,on_tap)
@@ -445,6 +489,9 @@ def viewer(doc):
         nonlocal grib_mode
         grib_mode = False
         update_root(False)
+
+    def update_datetime_picker(start_time):
+        start_time_picker.value = start_time
     
     button_disable_grib = Button(
         label="Disable Grib Mode",
@@ -454,6 +501,9 @@ def viewer(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
+    button_Start_Routing_GCR.on_event('button_click', find_gcr_single)
+    button_Start_Routing_GCR_Grib.on_event('button_click', find_gcr_single)
+
     button_disable_grib.on_event("button_click",update_root_false)
     
     update_root(False)

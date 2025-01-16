@@ -106,7 +106,7 @@ class Boat:
     
     def _binary_list_class_search(self,input_list: list, search_term: int):
         #print(f"boo   {search_term}")
-        print(input_list)
+        #print(input_list)
         list_length = len(input_list)
         current_index = list_length//2
         found = False
@@ -130,7 +130,7 @@ class Boat:
                         current_index = current_index - list_length//(2**count)
             else:
                 for i in range(1,list_length-1):
-                    print(i)
+                    #print(i)
     
                     if input_list[i-1] < search_term and input_list[i] > search_term:
                         found_index = i
@@ -140,11 +140,15 @@ class Boat:
                         break
                     #print(f"found {found_index}")
                 found = True
+            if found_index ==-1:
+                print(f"Error for input {search_term}")
+                found_index = (len(input_list)-1)
         return found_index
                 
     def find_polar_speed(self,windspeed,heading):
         reference_windspeeds = self._list_to_int(self.data["wind_list"])
         reference_headings = self._list_to_int(self.data["heading_list"])
+        print(f"heading_list is {reference_headings}")
         speed_index = self._binary_list_class_search(reference_windspeeds,windspeed)
         heading_index = self._binary_list_class_search(reference_headings,heading)
         print(f"heading_index is {heading_index}")
@@ -157,7 +161,7 @@ class Boat:
                 boatspeed = self.data[self.data["wind_list"][speed_index]][len(self.data[self.data["wind_list"][speed_index]])-1]
             else:
                 boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
-        print(self.data[self.data["wind_list"][speed_index]])
+        print(f"speed is {self.data[self.data['wind_list'][speed_index]][heading_index]} for heading of {heading}")
         return boatspeed
         
         

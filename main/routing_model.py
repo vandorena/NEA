@@ -24,7 +24,7 @@ class Routing_Model:
         self._current_path = path
         self._current_grib = grib
         self._current_bearing = -1
-        self._timestep = 30
+        self._timestep = globals.current_timestep
         self._angle_step = pi/6
 
     def _create_path(self):
@@ -165,6 +165,7 @@ class Routing_Model:
         #HaversineFormula
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
         start_time = self._current_path.start_time
+        print(start_time)   
         self._current_path.path_data["great_circle_times"].append(start_time)
         self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
         end_point = False
@@ -176,12 +177,15 @@ class Routing_Model:
                 lat,lon = self._route_single_point_online(True)
                 if not self._check_in_water(lat,lon) and exit_land:
                     raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {self._current_path.path_data['great_circle_lat'][-1]},{self._current_path.path_data['great_circle_lon'][-1]} ")
-                if not self._check_in_water(lat,lon) and 
+                if not (self._check_in_water(lat,lon)) and (not exit_land):
+                    exit_land = True
                 self._current_path.path_data["great_circle_lat"].append(lat)
                 self._current_path.path_data["great_circle_lon"].append(lon)
                 self._current_path.path_data["great_circle_times"].append(start_time + timedelta(minutes = 30))
                 self._current_path._gcr_time += 30
                 gcr_distances.append(self._distance_from_current_to_end(gcr_flag=True))
+                if gcr_distances[-1] <10:
+                    end_point = True
         
 
             
@@ -198,9 +202,9 @@ class Routing_Model:
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat,lon,time)
         twa = self._find_twa_mag_bear(radians(wind_heading))
         while twa < 30:
-            self._current_bearing += 30
+            self._current_bearing += 50
             if self._current_bearing > 360:
-                self._current_bearing == 360
+                self._current_bearing -= 360
             print("upwind")
             twa = self._find_twa_mag_bear(radians(wind_heading))
         print(f"twa is {twa} at {lat},{lon}")
