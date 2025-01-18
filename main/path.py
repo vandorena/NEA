@@ -52,9 +52,15 @@ class Path:
         self.started = True
 
 
-    def append_great_circle_point(self,lat:float,lon:float):
+    def append_great_circle_point(self,lat:float,lon:float,time:datetime):
         self.path_data["great_circle_lat"].append(lat)
         self.path_data["great_circle_lon"].append(lon)
+        self.path_data["great_circle_times"].append(time)
+
+    def pop_great_circle_point(self):
+        self.path_data["great_circle_lat"].pop()
+        self.path_data["great_circle_lon"].pop()
+        self.path_data["great_circle_times"].pop()
 
     def set_end(self):
         self.ended = True

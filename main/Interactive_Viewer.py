@@ -463,6 +463,7 @@ def viewer(doc):
         print(f"xs and ys {xs},{ys}")
         source = ColumnDataSource({'x':xs,'y':ys})
         plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+        plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
         current_color +=1
 
 

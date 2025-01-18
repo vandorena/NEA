@@ -1,12 +1,12 @@
 from path import Path
 from boats import Boat
 from Grib_Options import GRIB, ECMWF_API
-from globals import selected_grib
-from math import radians, asin,sqrt,cos,degrees, pi, atan, atan2
+from globals import selected_grib, current_timestep
+from math import radians, asin,sqrt,cos,degrees, pi, atan, atan2, sin
 from datetime import datetime,timedelta
 from global_land_mask import globe
 import numpy as np
-from haversine import inverse_haversine
+from haversine import inverse_haversine, haversine, Unit
 import open_meteo
 
 class PathError(Exception):
@@ -24,7 +24,7 @@ class Routing_Model:
         self._current_path = path
         self._current_grib = grib
         self._current_bearing = -1
-        self._timestep = globals.current_timestep
+        self._timestep = current_timestep
         self._angle_step = pi/6
 
     def _create_path(self):
@@ -155,39 +155,43 @@ class Routing_Model:
             return land_list
 
     def create_big_circle_route_online_v2(self):
-        #print("Creating Big Cirlce")
-        #print(self._current_path.start_lattitude)
-        #print(self._current_path.end_lattitude)
-        lat_s, lon_s , lat_e , lon_e = map(radians,[self._current_path.start_lattitude,self._current_path.start_longitude,self._current_path.end_lattitude,self._current_path.end_longitude])
-        delta_lat = lat_e - lat_s
-        delta_lon = lon_e - lon_s
-        earth_radius = 6.3781*(10**6) #in meters
-        #HaversineFormula
-        distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(lat_s)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
-        start_time = self._current_path.start_time
-        print(start_time)   
-        self._current_path.path_data["great_circle_times"].append(start_time)
-        self._current_path.append_great_circle_point(degrees(lat_s),degrees(lon_s))
-        end_point = False
-        self._current_bearing = degrees(self._angle_to_destination_gcr(delta_lat,delta_lon))
-        gcr_distances = []
+        start_lat, start_lon = self._current_path.start_lattitude, self._current_path.start_longitude #y
+        end_lat, end_lon = self._current_path.end_lattitude, self._current_path.end_longitude
+        start_time = self._current_path.start_time #y
+        print(start_time)   #y
+        self._current_path.append_great_circle_point(start_lat,start_lon,start_time)#y
+        end_point = False #y
+        self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=start_lat,start_lon=start_lon,end_lat=end_lat,end_lon=end_lon) #y
+        gcr_distances = [self._distance_from_current_to_end_v2(True)]
         self._current_path._gcr_time = 0
         exit_land = False
         while not end_point:
                 lat,lon = self._route_single_point_online(True)
+                self._current_bearing = self._angle_to_destinatin_gcr_v2(lat,lon,end_lat,end_lon)
                 if not self._check_in_water(lat,lon) and exit_land:
-                    raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {self._current_path.path_data['great_circle_lat'][-1]},{self._current_path.path_data['great_circle_lon'][-1]} ")
+                    prev_lat_holder, prev_lon_holder = self._current_path.path_data['great_circle_lat'][-1], self._current_path.path_data['great_circle_lon'][-1]
+                    self._current_path.pop_great_circle_point()
+                    raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {prev_lat_holder},{prev_lon_holder} ")
                 if not (self._check_in_water(lat,lon)) and (not exit_land):
                     exit_land = True
-                self._current_path.path_data["great_circle_lat"].append(lat)
-                self._current_path.path_data["great_circle_lon"].append(lon)
-                self._current_path.path_data["great_circle_times"].append(start_time + timedelta(minutes = 30))
-                self._current_path._gcr_time += 30
-                gcr_distances.append(self._distance_from_current_to_end(gcr_flag=True))
-                if gcr_distances[-1] <10:
+                self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = current_timestep)))
+                self._current_path._gcr_time += current_timestep
+                gcr_distances.append(self._distance_from_current_to_end_v2(gcr_flag=True))
+                if gcr_distances[-1] > (gcr_distances[-2] + 10):
+                    while len(gcr_distances) > 1:
+                        if gcr_distances[-1] > gcr_distances[-2]:
+                            gcr_distances.pop()
+                            self._current_path.pop_great_circle_point()
+                        else:
+                            break
                     end_point = True
+                
         
-
+    
+    def find_time_for_distance(self,distance):
+        self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=self._current_path.path_data["great_circle_lat"][-1],start_lon=self._current_path.path_data["great_circle_lon"][-1],end_lat=self._current_path.end_lattitude,end_lon=self._current_path.end_longitude)
+        ws_mag, wind_heading = open_meteo.make_10mvu_request(lat=self._current_path.path_data["great_circle_lat"][-1],lon=self._current_path.path_data["great_circle_lon"][-1],time=self._current_path.path_data["great_circle_times"][-1])
+        twa = self_
             
     def _straight_line_distance_online(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
@@ -202,32 +206,44 @@ class Routing_Model:
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat,lon,time)
         twa = self._find_twa_mag_bear(radians(wind_heading))
         while twa < 30:
-            self._current_bearing += 50
+            self._current_bearing += 30
             if self._current_bearing > 360:
                 self._current_bearing -= 360
             print("upwind")
             twa = self._find_twa_mag_bear(radians(wind_heading))
         print(f"twa is {twa} at {lat},{lon}")
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-        print(self._timestep)
-        print("timestep")
+        #print(self._timestep)
+        #print("timestep")
         distance_nm = float(boatspeed) * (int(self._timestep))/60
         return distance_nm
     
     def _distance_from_current_to_end(self, gcr_flag: bool=False):
-        lat_e = radians(self._current_path.end_lattitude)
-        lon_e = radians(self._current_path.end_longitude)
+        lat_e = self._current_path.end_lattitude
+        lon_e = self._current_path.end_longitude
         if gcr_flag == True:
-            current_lat = radians(self._current_path.path_data["great_circle_lat"][-1])
-            current_lon = radians(self._current_path.path_data["great_circle_lon"][-1])
+            current_lat = self._current_path.path_data["great_circle_lat"][-1]
+            current_lon = self._current_path.path_data["great_circle_lon"][-1]
         else:
-            current_lat = radians(self._current_path.path_data["lat"][-1])
-            current_lon = radians(self._current_path.path_data["lon"][-1])
+            current_lat = self._current_path.path_data["lat"][-1]
+            current_lon = self._current_path.path_data["lon"][-1]
         delta_lat = lat_e - current_lat
         delta_lon = lon_e - current_lon
         earth_radius = 6.3781*(10**6) #in meters
         #HaversineFormula
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(current_lat)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
+        return distance
+
+    def _distance_from_current_to_end_v2(self, gcr_flag: bool=False):
+        lat_e = self._current_path.end_lattitude
+        lon_e = self._current_path.end_longitude
+        if gcr_flag == True:
+            current_lat = self._current_path.path_data["great_circle_lat"][-1]
+            current_lon = self._current_path.path_data["great_circle_lon"][-1]
+        else:
+            current_lat = self._current_path.path_data["lat"][-1]
+            current_lon = self._current_path.path_data["lon"][-1]
+        distance = haversine((current_lat,current_lon),(lat_e,lon_e), unit = Unit.NAUTICAL_MILES)
         return distance
 
     def _route_single_point(self, gcr_flag: bool=False,lat:int=None,lon:int=None):
@@ -301,6 +317,7 @@ class Routing_Model:
             angle = degrees(angle)  + 360
         else:
             angle = degrees(angle)
+        print(f"Current_TWA is: {angle}")
         return angle
 
     def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float:
@@ -311,7 +328,14 @@ class Routing_Model:
         if angle < 0:
             angle += (2* pi)
         return angle
-        
+    
+    def _angle_to_destinatin_gcr_v2(self,start_lat,end_lat, start_lon,end_lon):
+        "Differs from previous by returing in degrees, is no longer 2d and follows spherical earth, returns in degrees"
+        delta_lon = end_lon - start_lon
+        holder1 = sin(delta_lon) *  cos(end_lat)
+        holder2 = cos(start_lat) * sin(end_lat) - sin(start_lat) * cos(end_lat)* cos(delta_lon)
+        bearing = atan2(holder1,holder2)
+        return (degrees(bearing) + 360) % 360
 
     def run_isometric(self):
         land = []

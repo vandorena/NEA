@@ -2,7 +2,7 @@ import datetime
 from ecmwf.opendata import Client
 
 NETWORK_STATUS = False
-current_timestep = 180 #In minutes integer
+current_timestep = 60 #In minutes integer
 SETTINGS = {
     "setting_list" : [],
     "number_of _points":1000,
