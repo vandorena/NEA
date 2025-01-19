@@ -1,7 +1,7 @@
 from path import Path
 from boats import Boat
 from Grib_Options import GRIB, ECMWF_API
-from globals import selected_grib, current_timestep
+from globals import selected_grib, current_timestep, upwind_twa
 from math import radians, asin,sqrt,cos,degrees, pi, atan, atan2, sin
 from datetime import datetime,timedelta
 from global_land_mask import globe
@@ -185,13 +185,32 @@ class Routing_Model:
                         else:
                             break
                     end_point = True
+        final_time = self.find_time_for_distance(gcr_distances[-1])
+        self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
                 
         
+    def decompose_time(self,twa,distnace,ws_mag):
+        across = distnace * sin(radians(twa))
+        upwind= distnace * cos(radians(twa))
+        first_mag = across / sin(radians(upwind_twa))
+        delta_upwind = sqrt((first_mag**2) - (across**2))
+        final_upwind = upwind-delta_upwind
+        final_mag = final_upwind/(cos(radians(upwind_twa)))
+        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+        time = (final_mag + first_mag)/float(boatspeed)
+        return time
     
     def find_time_for_distance(self,distance):
         self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=self._current_path.path_data["great_circle_lat"][-1],start_lon=self._current_path.path_data["great_circle_lon"][-1],end_lat=self._current_path.end_lattitude,end_lon=self._current_path.end_longitude)
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat=self._current_path.path_data["great_circle_lat"][-1],lon=self._current_path.path_data["great_circle_lon"][-1],time=self._current_path.path_data["great_circle_times"][-1])
-        twa = self_
+        twa = self._find_twa_mag_bear(radians(wind_heading))
+        if twa >= upwind_twa:
+            boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+            time = distance/float(boatspeed)
+        else:
+            print("estimate")
+            time = self.decompose_time(twa,distance,ws_mag)
+        return time
             
     def _straight_line_distance_online(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
@@ -205,8 +224,8 @@ class Routing_Model:
             time = self._current_path.path_data["great_circle_times"][-1]
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat,lon,time)
         twa = self._find_twa_mag_bear(radians(wind_heading))
-        while twa < 30:
-            self._current_bearing += 30
+        while twa < 40:
+            self._current_bearing += 40
             if self._current_bearing > 360:
                 self._current_bearing -= 360
             print("upwind")

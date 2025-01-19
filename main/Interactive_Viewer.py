@@ -441,30 +441,33 @@ def viewer(doc):
 
     def find_gcr_single():
         nonlocal current_color,plot_colors
-        check_current_path()
-        cur_path = globals.current_path
-        if grib_mode:
-            cur_grib = globals.selected_grib
-        else:
-            cur_grib = GRIB("dummy.grib2")
-        routing = Routing_Model(path=cur_path,grib=cur_grib)
-        if grib_mode:
-            routing.create_big_circle_route()
-        else:
-            try:
-                routing.create_big_circle_route_online_v2()
-            except ContinuedOutWaterException:
-                land_hit = True
-                print(f"Hit land with {cur_path.path_data}")
-                update_div()
-        lats = cur_path.path_data['great_circle_lat']
-        lons = cur_path.path_data['great_circle_lon']
-        xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-        print(f"xs and ys {xs},{ys}")
-        source = ColumnDataSource({'x':xs,'y':ys})
-        plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-        plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
-        current_color +=1
+        try:
+            check_current_path()
+            cur_path = globals.current_path
+            if grib_mode:
+                cur_grib = globals.selected_grib
+            else:
+                cur_grib = GRIB("dummy.grib2")
+            routing = Routing_Model(path=cur_path,grib=cur_grib)
+            if grib_mode:
+                routing.create_big_circle_route()
+            else:
+                try:
+                    routing.create_big_circle_route_online_v2()
+                except ContinuedOutWaterException:
+                    land_hit = True
+                    print(f"Hit land with {cur_path.path_data}")
+                    update_div()
+            lats = cur_path.path_data['great_circle_lat']
+            lons = cur_path.path_data['great_circle_lon']
+            xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+            print(f"xs and ys {xs},{ys}")
+            source = ColumnDataSource({'x':xs,'y':ys})
+            plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+            plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
+            current_color +=1
+        except BaseException:
+            print("There was an error ,l ine 470 of interactive viewer")
 
 
     plot.on_event(Tap,on_tap)

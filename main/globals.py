@@ -12,6 +12,7 @@ SETTINGS = {
     }
 current_path = None
 max_days_future = 3
+upwind_twa = 30
 # Routings are Path objects
 CURRENT_BOATS = {
     "boat_list":[]
