@@ -8,6 +8,7 @@ from global_land_mask import globe
 import numpy as np
 from haversine import inverse_haversine, haversine, Unit
 import open_meteo
+import random
 
 class PathError(Exception):
     "BaseClass for Exceptions relating to path functions"
@@ -26,6 +27,7 @@ class Routing_Model:
         self._current_bearing = -1
         self._timestep = current_timestep
         self._angle_step = pi/6
+        self._upwind_tack = False
 
     def _create_path(self):
         start_latitude = float(input("Enter the starting lattitude: "))
@@ -161,30 +163,32 @@ class Routing_Model:
         print(start_time)   #y
         self._current_path.append_great_circle_point(start_lat,start_lon,start_time)#y
         end_point = False #y
-        self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=start_lat,start_lon=start_lon,end_lat=end_lat,end_lon=end_lon) #y
         gcr_distances = [self._distance_from_current_to_end_v2(True)]
         self._current_path._gcr_time = 0
         exit_land = False
         while not end_point:
-                lat,lon = self._route_single_point_online(True)
-                self._current_bearing = self._angle_to_destinatin_gcr_v2(lat,lon,end_lat,end_lon)
-                if not self._check_in_water(lat,lon) and exit_land:
-                    prev_lat_holder, prev_lon_holder = self._current_path.path_data['great_circle_lat'][-1], self._current_path.path_data['great_circle_lon'][-1]
-                    self._current_path.pop_great_circle_point()
-                    raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {prev_lat_holder},{prev_lon_holder} ")
-                if not (self._check_in_water(lat,lon)) and (not exit_land):
-                    exit_land = True
-                self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = current_timestep)))
-                self._current_path._gcr_time += current_timestep
-                gcr_distances.append(self._distance_from_current_to_end_v2(gcr_flag=True))
-                if gcr_distances[-1] > (gcr_distances[-2] + 10):
-                    while len(gcr_distances) > 1:
-                        if gcr_distances[-1] > gcr_distances[-2]:
-                            gcr_distances.pop()
-                            self._current_path.pop_great_circle_point()
-                        else:
-                            break
-                    end_point = True
+            self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=self._current_path.path_data['great_circle_lat'][-1],start_lon=self._current_path.path_data['great_circle_lon'][-1],end_lat=end_lat,end_lon=end_lon) #y
+            lat,lon = self._route_single_point_online(True)
+            if not self._check_in_water(lat,lon) and exit_land:
+                prev_lat_holder, prev_lon_holder = self._current_path.path_data['great_circle_lat'][-1], self._current_path.path_data['great_circle_lon'][-1]
+                self._current_path.pop_great_circle_point()
+                raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {prev_lat_holder},{prev_lon_holder} ")
+            if not (self._check_in_water(lat,lon)) and (not exit_land):
+                exit_land = True
+            self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = current_timestep)))
+            self._current_path._gcr_time += current_timestep
+            gcr_distances.append(self._distance_from_current_to_end_v2(gcr_flag=True))
+            print(f"gcr_distances are{gcr_distances}")
+            if gcr_distances[-1] > (gcr_distances[-2]):
+                self._current_path.pop_great_circle_point()
+                #while len(gcr_distances) > 1:
+                    #   if gcr_distances[-1] > gcr_distances[-2]:
+                    #      gcr_distances.pop()
+                    #     self._current_path.pop_great_circle_point()
+                    #else:
+                        #   break
+                end_point = True
+                break
         final_time = self.find_time_for_distance(gcr_distances[-1])
         self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
                 
@@ -196,7 +200,7 @@ class Routing_Model:
         delta_upwind = sqrt((first_mag**2) - (across**2))
         final_upwind = upwind-delta_upwind
         final_mag = final_upwind/(cos(radians(upwind_twa)))
-        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
         time = (final_mag + first_mag)/float(boatspeed)
         return time
     
@@ -211,6 +215,11 @@ class Routing_Model:
             print("estimate")
             time = self.decompose_time(twa,distance,ws_mag)
         return time
+
+    def upwind_twa_bearing_finder(self,lat,lon,time):
+        if self._angle_to_destinatin_gcr_v2():
+            pass
+        
             
     def _straight_line_distance_online(self, gcr_flag:  bool=False):
         """Timestep is expected int for mintures returns distance in nautical miles"""
@@ -224,18 +233,21 @@ class Routing_Model:
             time = self._current_path.path_data["great_circle_times"][-1]
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat,lon,time)
         twa = self._find_twa_mag_bear(radians(wind_heading))
-        while twa < 40:
-            self._current_bearing += 40
-            if self._current_bearing > 360:
-                self._current_bearing -= 360
-            print("upwind")
-            twa = self._find_twa_mag_bear(radians(wind_heading))
         print(f"twa is {twa} at {lat},{lon}")
-        boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
+        if twa < upwind_twa:
+            boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
+            distance_1 = float(boatspeed) * (int(self._timestep))/60
+            distance_nm = distance_1 * cos(radians(upwind_twa))/cos(radians(twa))
+        else:
+            boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
         #print(self._timestep)
         #print("timestep")
-        distance_nm = float(boatspeed) * (int(self._timestep))/60
+            distance_nm = float(boatspeed) * (int(self._timestep))/60
         return distance_nm
+    
+    def _straight_line_distance_online_only(self, gcr_flag: bool = False):
+        boatspeed = self._current_path
+        
     
     def _distance_from_current_to_end(self, gcr_flag: bool=False):
         lat_e = self._current_path.end_lattitude
@@ -324,18 +336,28 @@ class Routing_Model:
             angle = degrees(angle)
         return angle
 
-    def _find_twa_mag_bear(self,heading):
-        print(self._current_bearing)
-        print(f"heading is {heading}")
-        bearing = radians(self._current_bearing)
-        angle = heading - bearing
-        if angle > radians(180):
-            angle = degrees(angle)
-            angle = angle - 360
-        elif degrees(angle) < -180:
-            angle = degrees(angle)  + 360
+    def _find_twa_mag_bear(self,wind_heading):
+        bearing = self._current_bearing % 360
+        wind_heading_ranged = wind_heading % 360
+        if wind_heading_ranged > bearing and bearing > 180:
+            angle = wind_heading_ranged - bearing
+        elif wind_heading_ranged > bearing and bearing < 180:
+            if wind_heading_ranged > (180 + bearing):
+                angle = 360 - wind_heading_ranged + bearing
+            else:
+                angle = wind_heading_ranged - bearing
+        elif wind_heading_ranged < bearing and bearing > 180:
+            angle = bearing - wind_heading_ranged
+            if angle > 180:
+                angle = 360 - angle
+        elif wind_heading_ranged < bearing and bearing < 180:
+            angle = bearing - wind_heading_ranged
+        elif wind_heading_ranged == bearing:
+            angle = 0
         else:
-            angle = degrees(angle)
+            print(f"Huh twa uncalcualted wind heading {wind_heading_ranged} bearing {bearing}")
+        if angle>180:
+            print(f"Error twa is > 180 it is  {angle}")
         print(f"Current_TWA is: {angle}")
         return angle
 
@@ -351,8 +373,8 @@ class Routing_Model:
     def _angle_to_destinatin_gcr_v2(self,start_lat,end_lat, start_lon,end_lon):
         "Differs from previous by returing in degrees, is no longer 2d and follows spherical earth, returns in degrees"
         delta_lon = end_lon - start_lon
-        holder1 = sin(delta_lon) *  cos(end_lat)
-        holder2 = cos(start_lat) * sin(end_lat) - sin(start_lat) * cos(end_lat)* cos(delta_lon)
+        holder1 = sin(radians(delta_lon)) *  cos(radians(end_lat))
+        holder2 = cos(radians(start_lat)) * sin(radians(end_lat)) - sin(radians(start_lat)) * cos(radians(end_lat)) * cos(radians(delta_lon))
         bearing = atan2(holder1,holder2)
         return (degrees(bearing) + 360) % 360
 

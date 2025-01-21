@@ -1,4 +1,4 @@
-import routing_model,Grib_Options,boats,path,datetime,os
+import routing_model,Grib_Options,boats,path,datetime,os, open_meteo
 
 #ecwmf = Grib_Options.ECMWF_API()
 #ecwmf.make_request()
@@ -12,13 +12,15 @@ import routing_model,Grib_Options,boats,path,datetime,os
 #print(routing_modes.isometric_online(path_s.start_lattitude, path_s.start_longitude, path_s.start_time))
 
 boat = boats.Boat("Imoca60")
-boat.add_polar_v2("Imoca60.pol")
 grib = Grib_Options.GRIB("dummy.grib2")
 paths = path.Path(start_time=datetime.datetime.now(), start_longitude=0,start_lattitude = 0,end_latitude = -0.2 ,end_longitude =0,boat=boat)
 route = routing_model.Routing_Model(path=paths,grib=grib)
-try:
-    route.create_big_circle_route_online_v2()
-except BaseException:
-    pass
-print("Done")
-print(paths.path_data)
+#try:
+ #   route.create_big_circle_route_online_v2()
+#except BaseException:
+ #   pass
+#print("Done")
+#print(paths.path_data)
+route._current_bearing = 300
+twa = route._find_twa_mag_bear(120)
+print(twa)

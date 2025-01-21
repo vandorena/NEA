@@ -23,6 +23,9 @@ def make_10mvu_request(lat,lon,time:datetime):
         response_data = response.json()
         #print(response_data)
 
+    if 'error' in response_data:
+        print(response_data['error'])
+
     index = None
     difference = datetime.timedelta.max
 
