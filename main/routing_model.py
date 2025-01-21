@@ -1,7 +1,7 @@
 from path import Path
 from boats import Boat
 from Grib_Options import GRIB, ECMWF_API
-from globals import selected_grib, current_timestep, upwind_twa
+from globals import selected_grib, upwind_twa
 from math import radians, asin,sqrt,cos,degrees, pi, atan, atan2, sin
 from datetime import datetime,timedelta
 from global_land_mask import globe
@@ -9,6 +9,7 @@ import numpy as np
 from haversine import inverse_haversine, haversine, Unit
 import open_meteo
 import random
+import globals
 
 class PathError(Exception):
     "BaseClass for Exceptions relating to path functions"
@@ -25,7 +26,6 @@ class Routing_Model:
         self._current_path = path
         self._current_grib = grib
         self._current_bearing = -1
-        self._timestep = current_timestep
         self._angle_step = pi/6
         self._upwind_tack = False
 
@@ -99,7 +99,7 @@ class Routing_Model:
         ws_mag = self._windspeed_magnitude_in_knts(u,v)
         twa = self._find_twa(u,v)
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-        distance_nm = boatspeed * (self._timestep)/60
+        distance_nm = boatspeed * (globals.current_timestep)/60
         return distance_nm
     
     def create_big_circle_route_online(self,ignore_exception:bool=False):
@@ -164,6 +164,18 @@ class Routing_Model:
         self._current_path.append_great_circle_point(start_lat,start_lon,start_time)#y
         end_point = False #y
         gcr_distances = [self._distance_from_current_to_end_v2(True)]
+        if gcr_distances[0] >= 10000:
+            globals.current_timestep = 720
+        elif gcr_distances[0] < 10000 and gcr_distances[0] >= 5000:
+            globals.current_timestep = 300
+        elif gcr_distances[0] < 5000 and gcr_distances[0] >= 2500:
+            globals.current_timestep = 240
+        elif gcr_distances[0] < 2500 and gcr_distances[0] >= 1000:
+            globals.current_timestep = 300
+        elif gcr_distances[0] < 1000 and gcr_distances[0] >= 500:
+            globals.current_timestep = 300
+        elif gcr_distances[0] < 1000 and gcr_distances[0] >= 0:
+            globals.current_timestep = 300
         self._current_path._gcr_time = 0
         exit_land = False
         while not end_point:
@@ -175,8 +187,8 @@ class Routing_Model:
                 raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {prev_lat_holder},{prev_lon_holder} ")
             if not (self._check_in_water(lat,lon)) and (not exit_land):
                 exit_land = True
-            self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = current_timestep)))
-            self._current_path._gcr_time += current_timestep
+            self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = globals.current_timestep)))
+            self._current_path._gcr_time += globals.current_timestep
             gcr_distances.append(self._distance_from_current_to_end_v2(gcr_flag=True))
             print(f"gcr_distances are{gcr_distances}")
             if gcr_distances[-1] > (gcr_distances[-2]):
@@ -236,13 +248,13 @@ class Routing_Model:
         print(f"twa is {twa} at {lat},{lon}")
         if twa < upwind_twa:
             boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
-            distance_1 = float(boatspeed) * (int(self._timestep))/60
+            distance_1 = float(boatspeed) * (int(globals.current_timestep))/60
             distance_nm = distance_1 * cos(radians(upwind_twa))/cos(radians(twa))
         else:
             boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-        #print(self._timestep)
+        #print(globals.current_timestep)
         #print("timestep")
-            distance_nm = float(boatspeed) * (int(self._timestep))/60
+            distance_nm = float(boatspeed) * (int(globals.current_timestep))/60
         return distance_nm
     
     def _straight_line_distance_online_only(self, gcr_flag: bool = False):
@@ -400,12 +412,12 @@ class Routing_Model:
             print("bearing")
             self._current_bearing = bearing
             new_lat,new_lon = self.route_iso_point(self,lat,lon,time)
-            new_time = time + timedelta(minutes=self._timestep)
+            new_time = time + timedelta(minutes=globals.current_timestep)
             if not self._check_in_water(new_lat,new_lon):
                 if (new_lat,new_lon,new_time) not in self.visited_points:
                     self.visited_points.append((new_lat,new_lon,new_time))
                 path = cur_path.append((new_lat,new_lon,new_time))
-                self._current_path._gcr_time -= self._timestep
+                self._current_path._gcr_time -= globals.current_timestep
                 new_points = self.isometric(new_lat,new_lon,new_time,path)
                 points.extend(new_points)
         return points
@@ -415,7 +427,7 @@ class Routing_Model:
         ws_mag = self._windspeed_magnitude_in_knts(u,v)
         twa = self._find_twa(u,v)
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-        distance_nm = boatspeed * (self._timestep)/60
+        distance_nm = boatspeed * (globals.current_timestep)/60
         current_point = (lat, lon)
         new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return (new_lat,new_lon)
@@ -431,12 +443,12 @@ class Routing_Model:
             print("bearing")
             self._current_bearing = bearing
             new_lat,new_lon = self.route_iso_point_online(lat,lon,time)
-            new_time = time + timedelta(minutes=self._timestep)
+            new_time = time + timedelta(minutes=globals.current_timestep)
             if not self._check_in_water(new_lat,new_lon):
                 if (new_lat,new_lon,new_time) not in self.visited_points:
                     self.visited_points.append((new_lat,new_lon,new_time))
                 path = cur_path.append((new_lat,new_lon,new_time))
-                self._current_path._gcr_time -= self._timestep
+                self._current_path._gcr_time -= globals.current_timestep
                 new_points = self.isometric(new_lat,new_lon,new_time,path)
                 points.extend(new_points)
         return points
@@ -452,7 +464,7 @@ class Routing_Model:
                 self._current_bearing -= 360
             twa = self._find_twa_mag_bear(radians(ws_dir))
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-        distance_nm = float(boatspeed) * (self._timestep)/60
+        distance_nm = float(boatspeed) * (globals.current_timestep)/60
         current_point = (lat, lon)
         new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return (new_lat,new_lon)

@@ -83,7 +83,7 @@ def viewer(doc):
 
 
     def check_current_path():
-        nonlocal start_x,start_y,end_x,end_y,start_time, number_of_points,intermediate_points
+        nonlocal start_x,start_y,end_x,end_y,start_time, number_of_points,intermediate_points, current_intermediate_point_changed, current_intermediate_point
         cur_boat = globals.selected_boat
         cur_path = globals.current_path
         if cur_path is not None:
@@ -99,7 +99,8 @@ def viewer(doc):
             cur_path_start_x,cur_path_start_y = 1,1
             cur_path_end_x,cur_path_end_y = 2,2
             cur_path_boat = cur_boat
-        if cur_path_start_x != start_x or cur_path_start_y != start_y or cur_path_end_x != end_x or cur_path_end_y != end_y or cur_path_start_time or cur_path_boat != cur_boat and number_of_points == 2:
+        if (cur_path_start_x != start_x or cur_path_start_y != start_y or cur_path_end_x != end_x or cur_path_end_y != end_y or cur_path_start_time or cur_path_boat != cur_boat) and number_of_points == 2:
+            print("Wrong Way on line 103")
             start_lat,start_lon = web_mercator_to_lat_lon(start_x,start_y)
             end_lat, end_lon = web_mercator_to_lat_lon(end_x,end_y)
             try:
@@ -109,6 +110,7 @@ def viewer(doc):
         elif current_intermediate_point_changed:
             current_intermediate_point_changed = False
             if current_intermediate_point == 0:
+                print("only once here")
                 start_flag = True
                 start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
                 end_lat , end_lon = web_mercator_to_lat_lon(intermediate_points[current_intermediate_point][0],intermediate_points[current_intermediate_point][1])
@@ -124,18 +126,22 @@ def viewer(doc):
                 except ValueError:
                     globals.current_path = Path(start_time =datetime.datetime.now(), start_lattitude=start_lat,start_longitude=start_lon, end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
             else:
-                if intermediate_gcr_flag:
+                print("It got here")
+                print(f"before {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
+                if intermediate_gcr_flag == True:
                     globals.current_path.start_lattitude = globals.current_path.path_data["great_circle_lat"][-1]
                     globals.current_path.start_longitude = globals.current_path.path_data["great_circle_lon"][-1]
-                    globals.current_path.end_latitude = cur_point_lat
+                    globals.current_path.end_lattitude = cur_point_lat
                     globals.current_path.end_longitude = cur_point_lon
                     globals.current_path.start_time = globals.current_path.path_data["great_circle_times"][-1]
-                if intermediate_isometric_flag:
+                elif intermediate_isometric_flag == True:
                     globals.current_path.start_lattitude = globals.current_path.path_data["lat"][-1]
                     globals.current_path.start_longitude = globals.current_path.path_data["lon"][-1]
-                    globals.current_path.end_latitude = cur_point_lat
+                    globals.current_path.end_lattitude = cur_point_lat
                     globals.current_path.end_longitude = cur_point_lon
                     globals.current_path.start_time = globals.current_path.path_data["times"][-1]
+                print(f"After {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
+               
 
 
     def create_boat_list()-> list:
@@ -313,8 +319,12 @@ def viewer(doc):
         return dt+datetime.timedelta(days=x)
 
     def update_num_of_points(attr,old,new):
-        nonlocal number_of_points
+        nonlocal number_of_points, tap_count,plot
         number_of_points = new
+        if tap_count > 1:
+            plot.renderers = []
+            plot.add_tile("CartoDB Positron", retina=True)
+            tap_count = 0
 
 
     button_enable_grib.on_event("button_click",enable_grib)
@@ -438,6 +448,7 @@ def viewer(doc):
                 update_lines()
             elif tap_count > 1 and tap_count < number_of_points:
                 intermediate_points.append((x,y))
+                print(f"Intermediate points are {intermediate_points}")
                 plot.scatter(x=[x],y=[y],size=8,fill_color="orange",line_color="yellow",line_width=1)
             elif tap_count == number_of_points:
                 pin_point_source.data= {'x':[],'y':[],'color':[]}
@@ -470,6 +481,7 @@ def viewer(doc):
                 start_y_changed = False
                 end_x_changed = False
                 end_y_changed = False
+                intermediate_points = []
                 update_div()
                 update_lines()
         except NotWaterError:
@@ -488,7 +500,7 @@ def viewer(doc):
         update_div()
 
     def find_gcr_single():
-        nonlocal current_color,plot_colors, tap_count, number_of_points
+        nonlocal plot, end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
         if number_of_points == 2:
             try:
                 while tap_count == 2:
@@ -520,37 +532,43 @@ def viewer(doc):
             except BaseException:
                 print("There was an error ,l ine 470 of interactive viewer")
         else:
-            try:
-                while tap_count == number_of_points:
+            end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
+            print("please help me, it should be coming here")
+            #try:
+            while tap_count == number_of_points:
+                if grib_mode:
+                    cur_grib = globals.selected_grib
+                else:
+                    cur_grib = GRIB("dummy.grib2")
+                while current_intermediate_point != len(intermediate_points): # Not sure of this
+                    intermediate_gcr_flag = True
+                    current_intermediate_point_changed = True
+                    check_current_path()
+                    cur_path = globals.current_path
+                    routing = Routing_Model(path=cur_path,grib=cur_grib)
                     if grib_mode:
-                        cur_grib = globals.selected_grib
+                        routing.create_big_circle_route()
                     else:
-                        cur_grib = GRIB("dummy.grib2")
-                    while current_intermediate_point != len(intermediate_points): # Not sure of this
-                        intermediate_gcr_flag = True
-                        current_intermediate_point_changed = True
-                        check_current_path()
-                        cur_path = globals.current_path
-                        routing = Routing_Model(path=cur_path,grib=cur_grib)
-                        if grib_mode:
-                            routing.create_big_circle_route()
-                        else:
-                            try:
-                                routing.create_big_circle_route_online_v2()
-                            except ContinuedOutWaterException:
-                                land_hit = True
-                                print(f"Hit land with {cur_path.path_data}")
-                                update_div()
-                        lats = cur_path.path_data['great_circle_lat']
-                        lons = cur_path.path_data['great_circle_lon']
-                        xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-                        print(f"xs and ys {xs},{ys}")
-                        source = ColumnDataSource({'x':xs,'y':ys})
-                        plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-                        plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
-                    current_color +=1
-            except BaseException:
-                print("There was an error with multiple gcrs of interactive viewer")
+                        try:
+                            routing.create_big_circle_route_online_v2()
+                        except ContinuedOutWaterException:
+                            land_hit = True
+                            print(f"Hit land with {cur_path.path_data}")
+                            update_div()
+                    lats = cur_path.path_data['great_circle_lat']
+                    lons = cur_path.path_data['great_circle_lon']
+                    xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+                    print(f"xs and ys {xs},{ys}")
+                    source = ColumnDataSource({'x':xs,'y':ys})
+                    plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                    plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
+                    current_intermediate_point += 1
+                    if cur_path.path_data["great_circle_lat"][-1] == end_lat and cur_path.path_data["great_circle_lon"][-1] == end_lon:
+                        break
+                current_color +=1
+                break
+            #except BaseException:
+             #   print("There was an error with multiple gcrs of interactive viewer")
                         
 
 
