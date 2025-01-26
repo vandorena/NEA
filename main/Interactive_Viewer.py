@@ -210,8 +210,7 @@ def viewer(doc):
     plot.scatter(x='x',y='y',source=pin_point_source,color='color',size=10)
 
     great_circle_source = ColumnDataSource(data={'x':[], 'y':[]})
-    plot.line(x='x',y='y', source = great_circle_source, color="red", legend_label="Great Circle Route")
-
+    
     optimum_route_source = ColumnDataSource(data={'x':[],'y':[]})
     plot.line(x='x',y='y',source=optimum_route_source,color='pink')
     
@@ -500,7 +499,7 @@ def viewer(doc):
         update_div()
 
     def find_gcr_single():
-        nonlocal plot, end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
+        nonlocal plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
         if number_of_points == 2:
             try:
                 while tap_count == 2:
@@ -533,6 +532,7 @@ def viewer(doc):
                 print("There was an error ,l ine 470 of interactive viewer")
         else:
             end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
+            start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
             print("please help me, it should be coming here")
             #try:
             while tap_count == number_of_points:
@@ -540,7 +540,7 @@ def viewer(doc):
                     cur_grib = globals.selected_grib
                 else:
                     cur_grib = GRIB("dummy.grib2")
-                while current_intermediate_point != len(intermediate_points): # Not sure of this
+                while current_intermediate_point != (len(intermediate_points)+1): # Not sure of this
                     intermediate_gcr_flag = True
                     current_intermediate_point_changed = True
                     check_current_path()
@@ -560,7 +560,7 @@ def viewer(doc):
                     xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
                     print(f"xs and ys {xs},{ys}")
                     source = ColumnDataSource({'x':xs,'y':ys})
-                    plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                    plot.line(source=source,legend_label=f"Great Circle Route between ({start_lat},{start_lon}) and ({end_lat},{end_lon})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
                     plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
                     current_intermediate_point += 1
                     if cur_path.path_data["great_circle_lat"][-1] == end_lat and cur_path.path_data["great_circle_lon"][-1] == end_lon:

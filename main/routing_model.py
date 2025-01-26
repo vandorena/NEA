@@ -201,6 +201,8 @@ class Routing_Model:
                         #   break
                 end_point = True
                 break
+        self._current_path.pop_great_circle_point()
+        self._current_path.pop_great_circle_point()
         final_time = self.find_time_for_distance(gcr_distances[-1])
         self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
                 

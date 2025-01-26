@@ -26,17 +26,17 @@ class Boat:
         speeds = []
         headings = []
         plr_type = ""
-        #print(line_array)
+        ##print(line_array)
         for i in range(0,len(line_array)):
             values = line_array[i].split()
-            print(f"values are {values}")
+            #print(f"values are {values}")
             speedholder = []
             heading_count = 0
             if i == 0:
                 plr_type = values[0]
                 if plr_type == "TWA\TWS":
                     wind_speeds = values[1:]
-                    print(f"{wind_speeds} areeeee")
+                    #print(f"{wind_speeds} areeeee")
             if plr_type == "TWA\TWS" and i!=0:
                 headings.append(values[0])
                 speeds.append(values[1:])
@@ -65,9 +65,9 @@ class Boat:
         self.data["wind_list"] = wind_speeds 
         self.data["heading_list"] = headings
         for i in range(0,len(wind_speeds)):
-            print(wind_speeds)
+            #print(wind_speeds)
             self.data[wind_speeds[i]] = speeds[i]
-        print(self.data)
+        #print(self.data)
         return
 
     def add_polar_v2(self,filename:str):
@@ -105,8 +105,8 @@ class Boat:
         return new_list
     
     def _binary_list_class_search(self,input_list: list, search_term: int):
-        #print(f"boo   {search_term}")
-        #print(input_list)
+        ##print(f"boo   {search_term}")
+        ##print(input_list)
         list_length = len(input_list)
         current_index = list_length//2
         found = False
@@ -118,8 +118,8 @@ class Boat:
             if current_comparision <= max_comparison:
                 current_comparision += 1
                 if input_list[current_index] == math.floor(search_term):
-                    print(input_list[current_index])
-                    #print("this is input_list")
+                    #print(input_list[current_index])
+                    ##print("this is input_list")
                     found_index = current_index
                     found = True
                 else:
@@ -130,28 +130,28 @@ class Boat:
                         current_index = current_index - list_length//(2**count)
             else:
                 for i in range(1,list_length-1):
-                    #print(i)
+                    ##print(i)
     
                     if input_list[i-1] < search_term and input_list[i] > search_term:
                         found_index = i
-                        print(f"gttit {found_index}")
+                        #print(f"gttit {found_index}")
                         found = True
             
                         break
-                    #print(f"found {found_index}")
+                    ##print(f"found {found_index}")
                 found = True
             if found_index ==-1:
-                print(f"Error for input {search_term}")
+                #print(f"Error for input {search_term}")
                 found_index = (len(input_list)-1)
         return found_index
                 
     def find_polar_speed(self,windspeed,heading):
         reference_windspeeds = self._list_to_int(self.data["wind_list"])
         reference_headings = self._list_to_int(self.data["heading_list"])
-        print(f"heading_list is {reference_headings}")
+        #print(f"heading_list is {reference_headings}")
         speed_index = self._binary_list_class_search(reference_windspeeds,windspeed)
         heading_index = self._binary_list_class_search(reference_headings,heading)
-        print(f"heading_index is {heading_index}")
+        #print(f"heading_index is {heading_index}")
         try:
             boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
         except IndexError:
@@ -161,7 +161,7 @@ class Boat:
                 boatspeed = self.data[self.data["wind_list"][speed_index]][len(self.data[self.data["wind_list"][speed_index]])-1]
             else:
                 boatspeed = self.data[self.data["wind_list"][speed_index]][heading_index]
-        print(f"speed is {self.data[self.data['wind_list'][speed_index]][heading_index]} for heading of {heading}")
+        #print(f"speed is {self.data[self.data['wind_list'][speed_index]][heading_index]} for heading of {heading}")
         return boatspeed
         
         

@@ -1,4 +1,4 @@
-from boats import Boat, PolarFileError
+from boats import Boat, PolarFileError, PolarFileNoMetadata
 from globals import CURRENT_BOATS, BUTTON_STYLE, selected_boat
 import globals
 from bokeh.models import Button, Dropdown, Div
@@ -21,7 +21,7 @@ def find_boats():
             boat.add_polar_v2(line_content[1])
             CURRENT_BOATS[line_content[0]] = boat
             boat = None
-        except PolarFileError:
+        except PolarFileError or PolarFileNoMetadata:
             pass
 
 def boat_button(boat):
@@ -40,8 +40,8 @@ def boats(doc):
         boat_list =[]
         for i in range(0,len(CURRENT_BOATS["boat_list"])):
             boatname = CURRENT_BOATS["boat_list"][i]
-            print(boatname)
-            print(CURRENT_BOATS[boatname])
+            #print(boatname)
+            #print(CURRENT_BOATS[boatname])
             ntuple = (boatname)
             boat_list.append(ntuple)
         return boat_list
@@ -50,10 +50,10 @@ def boats(doc):
 
     def select_boat(event):
         globals.selected_boat = CURRENT_BOATS[event.item]
-        print(selected_boat)
-        print("got this :)")
+       # print(selected_boat)
+        #print("got this :)")
         dumdum.text = f"{uuid.uuid4()}"
-        print(dumdum.text)
+        #print(dumdum.text)
 
     
     add_boat = Button(
