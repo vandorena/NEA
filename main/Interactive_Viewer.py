@@ -190,6 +190,43 @@ def viewer(doc):
         nonlocal start_x,start_y,end_x,end_y
 
     def full_routing(event):
+        nonlocal end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors
+        end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
+        start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
+        print("please help me, it should be coming here")
+        #try:
+        while tap_count == number_of_points:
+            if grib_mode:
+                cur_grib = globals.selected_grib
+            else:
+                cur_grib = GRIB("dummy.grib2")
+            while current_intermediate_point != (len(intermediate_points)+1): # Not sure of this
+                intermediate_gcr_flag = True
+                current_intermediate_point_changed = True
+                check_current_path()
+                cur_path = globals.current_path
+                routing = Routing_Model(path=cur_path,grib=cur_grib)
+                if grib_mode:
+                    routing.create_big_circle_route()
+                else:
+                    try:
+                        routing.create_big_circle_route_online_v2()
+                    except ContinuedOutWaterException:
+                        land_hit = True
+                        print(f"Hit land with {cur_path.path_data}")
+                        update_div()
+                lats = cur_path.path_data['great_circle_lat']
+                lons = cur_path.path_data['great_circle_lon']
+                xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+                print(f"xs and ys {xs},{ys}")
+                source = ColumnDataSource({'x':xs,'y':ys})
+                plot.line(source=source,legend_label=f"Great Circle Route between ({start_lat},{start_lon}) and ({end_lat},{end_lon})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
+                current_intermediate_point += 1
+                if cur_path.path_data["great_circle_lat"][-1] == end_lat and cur_path.path_data["great_circle_lon"][-1] == end_lon:
+                    break
+            current_color +=1
+            break
         pass
 
     def gcr_grib_routing(event):
