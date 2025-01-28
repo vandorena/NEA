@@ -196,30 +196,33 @@ def viewer(doc):
 
     def full_routing(event):
         nonlocal end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
-        end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
-        start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
-        print("please help me, it should be coming here")
-        #try:
-        while tap_count == number_of_points:
-            if grib_mode:
-                cur_grib = globals.selected_grib
-            else:
-                cur_grib = None
-            track = intermediate_points + [(end_lat,end_lon)]
-            cur_boat = globals.selected_boat
-            routing_object = Routing(LinearBestIsoRouter,cur_boat,track,cur_grib,start_time,start_position=(start_lat,start_lon),pointsValidity=globe.is_ocean)
-            while not routing_object.end:
-                result = routing_object.step(timedelta=4)
-            lats, lons, twds, twss, speeds, headings = zip(*result.path)
-            xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-            print(f"xs and ys {xs},{ys}")
-            source = ColumnDataSource({'x':xs,'y':ys})
-            plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-            plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
-            fastest_route_div.text = f"{result.path}"
-            current_color +=1
-            break
-        pass
+        try:
+            end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
+            start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
+            print("please help me, it should be coming here")
+            #try:
+            while tap_count == number_of_points:
+                if grib_mode:
+                    cur_grib = globals.selected_grib
+                else:
+                    cur_grib = None
+                track = intermediate_points + [(end_lat,end_lon)]
+                cur_boat = globals.selected_boat
+                routing_object = Routing(LinearBestIsoRouter,cur_boat,track,cur_grib,start_time,startPosition=(start_lat,start_lon),pointsValidity=globe.is_ocean)
+                while not routing_object.end:
+                    result = routing_object.step(timedelta=12)
+                    print("ay it did a step")
+                lats, lons, twds, twss, speeds, headings = zip(*result.path)
+                xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+                print(f"xs and ys {xs},{ys}")
+                source = ColumnDataSource({'x':xs,'y':ys})
+                plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
+                fastest_route_div.text = f"{result.path}"
+                current_color +=1
+                break
+        except BaseException:
+            pass
 
     def gcr_grib_routing(event):
         pass        

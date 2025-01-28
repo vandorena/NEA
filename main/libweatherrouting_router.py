@@ -175,9 +175,10 @@ class Router:
 
         def pointF(p, tws, twa, dt, brg):
             speed = self.polar.find_polar_speed(tws, math.copysign(twa, 1))
+
             rpd = (
                 utils.routagePointDistance(
-                    p[0], p[1], speed * dt * utils.NAUTICAL_MILE_IN_KM, brg
+                    p[0], p[1], float(speed) * dt * utils.NAUTICAL_MILE_IN_KM, brg
                 ),
                 speed,
             )
@@ -206,7 +207,9 @@ class Router:
             isonew = list(filter(validLine, isonew))
         if self.pointsValidity:
             pp = list(map(lambda a: a.pos, isonew))
-            pv = self.pointsValidity(pp)
+          #  print(f"The pp is {pp}")
+            pp_lat, pp_lon = zip(*pp)
+            pv = list(map(self.pointsValidity,pp_lat,pp_lon))
 
             for x in range(len(isonew)):
                 if not pv[x]:
@@ -224,7 +227,8 @@ class Router:
                     isonew,
                 )
             )
-            pv = self.linesValidity(pp)
+            pp_lat, pp_lon = zip(*pp)
+            pv = list(map(self.linesValidity,pp_lat,pp_lon))
 
             for x in range(len(isonew)):
                 if not pv[x]:
