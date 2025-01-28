@@ -17,7 +17,7 @@
 
 import datetime
 
-import libweatherrouting_utils
+import libweatherrouting_utils as utils
 from libweatherrouting_router import IsoPoint,Router,RouterParam,RoutingResult
 
 class LinearBestIsoRouter(Router):
@@ -48,8 +48,7 @@ class LinearBestIsoRouter(Router):
                 path.append(iso[path[-1].prevIdx])
             path = path[::-1]
             position = path[-1].pos
-
-        if self.grib.getWindAt(
+        if self.grib is None or self.grib.getWindAt(
             time + datetime.timedelta(hours=timedelta), end[0], end[1]
         ):
             if lastlog is not None and len(lastlog.isochrones) > 0:

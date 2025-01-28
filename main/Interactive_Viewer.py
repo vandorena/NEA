@@ -15,6 +15,9 @@ import pandas
 from path import Path
 from Grib_Options import GRIB
 from routing_model import Routing_Model, ContinuedOutWaterException
+from libweatherrouting_routing import Routing
+from libweatherrouting_linearbestisorouter import LinearBestIsoRouter
+from global_land_mask import globe
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
@@ -189,8 +192,10 @@ def viewer(doc):
     def gcr_routing(event):
         nonlocal start_x,start_y,end_x,end_y
 
+    fastest_route_div = Div(text="")
+
     def full_routing(event):
-        nonlocal end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors
+        nonlocal end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
         end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
         start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
         print("please help me, it should be coming here")
@@ -199,32 +204,19 @@ def viewer(doc):
             if grib_mode:
                 cur_grib = globals.selected_grib
             else:
-                cur_grib = GRIB("dummy.grib2")
-            while current_intermediate_point != (len(intermediate_points)+1): # Not sure of this
-                intermediate_gcr_flag = True
-                current_intermediate_point_changed = True
-                check_current_path()
-                cur_path = globals.current_path
-                routing = Routing_Model(path=cur_path,grib=cur_grib)
-                if grib_mode:
-                    routing.create_big_circle_route()
-                else:
-                    try:
-                        routing.create_big_circle_route_online_v2()
-                    except ContinuedOutWaterException:
-                        land_hit = True
-                        print(f"Hit land with {cur_path.path_data}")
-                        update_div()
-                lats = cur_path.path_data['great_circle_lat']
-                lons = cur_path.path_data['great_circle_lon']
-                xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-                print(f"xs and ys {xs},{ys}")
-                source = ColumnDataSource({'x':xs,'y':ys})
-                plot.line(source=source,legend_label=f"Great Circle Route between ({start_lat},{start_lon}) and ({end_lat},{end_lon})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-                plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
-                current_intermediate_point += 1
-                if cur_path.path_data["great_circle_lat"][-1] == end_lat and cur_path.path_data["great_circle_lon"][-1] == end_lon:
-                    break
+                cur_grib = None
+            track = intermediate_points + [(end_lat,end_lon)]
+            cur_boat = globals.selected_boat
+            routing_object = Routing(LinearBestIsoRouter,cur_boat,track,cur_grib,start_time,start_position=(start_lat,start_lon),pointsValidity=globe.is_ocean)
+            while not routing_object.end:
+                result = routing_object.step(timedelta=4)
+            lats, lons, twds, twss, speeds, headings = zip(*result.path)
+            xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+            print(f"xs and ys {xs},{ys}")
+            source = ColumnDataSource({'x':xs,'y':ys})
+            plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+            plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
+            fastest_route_div.text = f"{result.path}"
             current_color +=1
             break
         pass
@@ -464,7 +456,7 @@ def viewer(doc):
             update_div()
     
     def on_tap(event):
-        nonlocal tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,water_warning, number_of_points,intermediate_points
+        nonlocal fastest_route_div, tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,water_warning, number_of_points,intermediate_points
         original_tap_count = tap_count
         x,y = event.x,event.y
         water_overide = False
@@ -517,6 +509,7 @@ def viewer(doc):
                 start_y_changed = False
                 end_x_changed = False
                 end_y_changed = False
+                fastest_route_div.text = ""
                 intermediate_points = []
                 update_div()
                 update_lines()
