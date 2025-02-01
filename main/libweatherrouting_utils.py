@@ -109,7 +109,8 @@ def routagePointDistance(
 
 
 def maxReachDistance(p, speed: float, dt: float = (1.0 / 60.0 * 60.0)) -> float:
-    maxp = routagePointDistance(p[0], p[1], speed * dt, 1)
+    #print(f"speed is {speed} speed type is {type(speed)} dt is {dt} dt type is {type(dt)}")
+    maxp = routagePointDistance(p[0], p[1], (float(speed) * float(dt)), 1)
     return pointDistance(p[0], p[1], maxp[0], maxp[1])
 
 

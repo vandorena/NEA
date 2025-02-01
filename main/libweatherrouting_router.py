@@ -21,6 +21,9 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import libweatherrouting_utils as utils
 import open_meteo
+import requests
+import time
+import random
 
 # http://www.tecepe.com.br/nav/vrtool/routing.htm
 
@@ -174,7 +177,9 @@ class Router:
         """Calculate isochrones depending on routageSpeed from polar"""
 
         def pointF(p, tws, twa, dt, brg):
+            #print("Looking for speed in libweather router")
             speed = self.polar.find_polar_speed(tws, math.copysign(twa, 1))
+            #print(f"Found a speed of {speed}")
 
             rpd = (
                 utils.routagePointDistance(
@@ -182,7 +187,7 @@ class Router:
                 ),
                 speed,
             )
-            # print ('tws', tws, 'sog', speed, 'twa', math.degrees(twa), 'brg',
+            # #print ('tws', tws, 'sog', speed, 'twa', math.degrees(twa), 'brg',
             # math.degrees(brg), 'rpd', rpd)
             return rpd
 
@@ -207,7 +212,7 @@ class Router:
             isonew = list(filter(validLine, isonew))
         if self.pointsValidity:
             pp = list(map(lambda a: a.pos, isonew))
-          #  print(f"The pp is {pp}")
+          #  #print(f"The pp is {pp}")
             pp_lat, pp_lon = zip(*pp)
             pv = list(map(self.pointsValidity,pp_lat,pp_lon))
 
@@ -248,15 +253,31 @@ class Router:
             cisos = []
             p = last[i]
 
-            try:
-                if self.grib is None:
-                    tws,twd = open_meteo.make_10mvu_request(p.pos[0],p.pos[1],t)
-                else:
+            if self.grib is None:
+                #print(p)
+                #print("Making a request right way, no grib")
+                try:
+                    try:
+                        tws = random.randint(1,30)
+                        twd = random.randint(0,360)
+                        tws,twd = open_meteo.make_10mvu_request(p.pos[0],p.pos[1],t)
+                    except KeyError:
+                        print("KeyError")
+                        time.sleep(5)
+                        tws,twd = open_meteo.make_10mvu_request(p.pos[0],p.pos[1],t)   
+                except requests.exceptions.ConnectionError:
+                    print("There was a connection error")
+                    raise requests.exceptions.ConnectionError
+            
+            else:
+                #print("Making a reequest the wrong way")
+                try:
                     (twd, tws) = self.grib.getWindAt(t, p.pos[0], p.pos[1])
-            except Exception as e:
-                raise RoutingNoWindException() from e
+                except Exception as e:
+                    print("There was a no wind error")
+                    raise RoutingNoWindException() from e
 
-            for twa in range(-180, 180, 5):
+            for twa in range(-180, 180, 30):
                 twa = math.radians(twa)
                 twd = math.radians(twd)
                 brg = utils.reduce360(twd + twa)

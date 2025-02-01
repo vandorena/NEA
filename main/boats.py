@@ -14,7 +14,7 @@ class Boat:
             "name":name
         }
 
-    def add_polar(self,filename:str):
+    def add_polar_v1(self,filename:str):
         """
         Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
         """
@@ -77,13 +77,13 @@ class Boat:
         polar_filetype = None
         polar_filetype=(line_array[0].split())[0]
         if polar_filetype == "TWA\TWS" or polar_filetype=="TWA" or polar_filetype=="TWA/TWS":
-            self.parse_TWA_TWS(line_array)
+            self._parse_TWA_TWS(line_array)
         elif polar_filetype == "!Expedition":
             raise PolarFileError(f"We currently don't support Expedition polar files")
         else:
             raise PolarFileNoMetadata(f"There is no metadata in file: {filename}")
         
-    def parse_TWA_TWS(self,lines:list):
+    def _parse_TWA_TWS(self,lines:list):
         self.data["heading_list"] = []
         for i in range(0,len(lines)):
             current_line = lines[i].split()

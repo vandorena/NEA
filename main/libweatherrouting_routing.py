@@ -107,23 +107,29 @@ class Routing:
         self.steps += 1
 
         if self.wp >= len(self.track):
+         #   #print("End condition met")
             self.end = True
             res = self.log[-1]
             return self.log[-1]
 
         # Next waypoint
+        ##print(1)
         nextwp = self.track[self.wp]
 
         if self._startingNewPoint or len(self.log) == 0:
+          #  #print(1.1)
             res = self.algorithm.route(
                 None, self.time, timedelta, self.position, nextwp
             )
             self._startingNewPoint = False
+           # #print(1.11)
         else:
+            ##print(1.2)
             res = self.algorithm.route(
                 self.log[-1], self.time, timedelta, self.position, nextwp
             )
-
+            ##print(1.21)
+        ##print("2")
         # self.time += 0.2
         ff = 100 / len(self.track)
         progress = ff * self.wp + len(self.log) % ff
@@ -136,6 +142,7 @@ class Routing:
 
         np = []
         ptime = None
+        #print(3)
         for x in self.path:
             nt = x.time
 
@@ -149,6 +156,7 @@ class Routing:
 
         self.path = np
         self.time = res.time
+        #print(4)
         nlog = RoutingResult(
             progress=progress, time=res.time, path=self.path, isochrones=res.isochrones
         )

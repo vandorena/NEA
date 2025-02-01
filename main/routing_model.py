@@ -22,12 +22,14 @@ class ContinuedOutWaterException(OutWaterException):
 
 class Routing_Model:
     
-    def __init__(self, path: Path,grib:GRIB) -> None:
+    def __init__(self, path: Path,grib:GRIB, timestep) -> None:
+        "Timestep is expected as int in hours"
         self._current_path = path
         self._current_grib = grib
         self._current_bearing = -1
         self._angle_step = pi/6
         self._upwind_tack = False
+        self.timestep = timestep*60
 
     def _create_path(self):
         start_latitude = float(input("Enter the starting lattitude: "))
@@ -164,18 +166,19 @@ class Routing_Model:
         self._current_path.append_great_circle_point(start_lat,start_lon,start_time)#y
         end_point = False #y
         gcr_distances = [self._distance_from_current_to_end_v2(True)]
-        if gcr_distances[0] >= 10000:
-            globals.current_timestep = 720
-        elif gcr_distances[0] < 10000 and gcr_distances[0] >= 5000:
-            globals.current_timestep = 300
-        elif gcr_distances[0] < 5000 and gcr_distances[0] >= 2500:
-            globals.current_timestep = 240
-        elif gcr_distances[0] < 2500 and gcr_distances[0] >= 1000:
-            globals.current_timestep = 300
-        elif gcr_distances[0] < 1000 and gcr_distances[0] >= 500:
-            globals.current_timestep = 300
-        elif gcr_distances[0] < 1000 and gcr_distances[0] >= 0:
-            globals.current_timestep = 300
+        globals.current_timestep = self.timestep
+        #if gcr_distances[0] >= 10000:
+         #   globals.current_timestep = 720
+        #elif gcr_distances[0] < 10000 and gcr_distances[0] >= 5000:
+        #    globals.current_timestep = 300
+        #elif gcr_distances[0] < 5000 and gcr_distances[0] >= 2500:
+        #    globals.current_timestep = 240
+        #elif gcr_distances[0] < 2500 and gcr_distances[0] >= 1000:
+        #    globals.current_timestep = 300
+        #elif gcr_distances[0] < 1000 and gcr_distances[0] >= 500:
+         #   globals.current_timestep = 300
+        #elif gcr_distances[0] < 1000 and gcr_distances[0] >= 0:
+         #   globals.current_timestep = 300
         self._current_path._gcr_time = 0
         exit_land = False
         while not end_point:
@@ -291,7 +294,7 @@ class Routing_Model:
         distance = haversine((current_lat,current_lon),(lat_e,lon_e), unit = Unit.NAUTICAL_MILES)
         return distance
 
-    def _route_single_point(self, gcr_flag: bool=False,lat:int=None,lon:int=None):
+    def _route_single_point(self, gcr_flag: bool=False,lat:float=None,lon:float=None):
         if not gcr_flag:
             distance_nm = self._straight_line_distance()
             current_point = (lat, lon)
@@ -301,7 +304,7 @@ class Routing_Model:
         new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return new_lat,new_lon
     
-    def _route_single_point_online(self, gcr_flag: bool=False,lat:int=None,lon:int=None):
+    def _route_single_point_online(self, gcr_flag: bool=False,lat:float=None,lon:float=None):
         if not gcr_flag:
             distance_nm = self._straight_line_distance_online()
             current_point = (lat, lon)

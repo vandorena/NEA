@@ -18,6 +18,7 @@ from routing_model import Routing_Model, ContinuedOutWaterException
 from libweatherrouting_routing import Routing
 from libweatherrouting_linearbestisorouter import LinearBestIsoRouter
 from global_land_mask import globe
+from libweatherrouting_mock_grib import mock_grib
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
@@ -25,6 +26,8 @@ class NotWaterError(Exception):
 def viewer(doc):
 
     start_time = (datetime.datetime.now() + datetime.timedelta(minutes=2))
+    
+    routing_timedelta = 1
 
     start_x = 0
     start_y = 0
@@ -195,34 +198,44 @@ def viewer(doc):
     fastest_route_div = Div(text="")
 
     def full_routing(event):
-        nonlocal end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
-        try:
-            end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
-            start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
-            print("please help me, it should be coming here")
-            #try:
-            while tap_count == number_of_points:
-                if grib_mode:
-                    cur_grib = globals.selected_grib
-                else:
-                    cur_grib = None
-                track = intermediate_points + [(end_lat,end_lon)]
-                cur_boat = globals.selected_boat
-                routing_object = Routing(LinearBestIsoRouter,cur_boat,track,cur_grib,start_time,startPosition=(start_lat,start_lon),pointsValidity=globe.is_ocean)
-                while not routing_object.end:
-                    result = routing_object.step(timedelta=12)
-                    print("ay it did a step")
-                lats, lons, twds, twss, speeds, headings = zip(*result.path)
-                xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-                print(f"xs and ys {xs},{ys}")
-                source = ColumnDataSource({'x':xs,'y':ys})
-                plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-                plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
-                fastest_route_div.text = f"{result.path}"
-                current_color +=1
-                break
-        except BaseException:
-            pass
+        nonlocal routing_timedelta, start_time, end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
+        #try:
+        end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
+        start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
+        #print("please help me, it should be coming here")
+        #try:
+        while tap_count == number_of_points:
+            print("Begann routing")
+            if grib_mode:
+                cur_grib = globals.selected_grib.filename_holder
+            else:
+                cur_grib = None
+                cur_grib = mock_grib(13,120,1)
+            track = intermediate_points + [(end_lat,end_lon)]
+            cur_boat = globals.selected_boat
+            routing_object = Routing(algorithm=LinearBestIsoRouter, polar=cur_boat,track=track,grib=cur_grib,startDatetime=start_time,startPosition=(start_lat,start_lon))
+            print("Object is made")
+            print(f"Cur grib is {cur_grib} and mode is {grib_mode}")
+            while not routing_object.end:
+                result = routing_object.step(timedelta=routing_timedelta)
+#                   print("ay it did a step")
+            print("It finished routing")
+            #print(result.path)
+            path_pos_list = []
+            for isopoint in result.path:
+                path_pos_list.append(isopoint.pos)
+            lats, lons = zip(*path_pos_list)
+            xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
+            #print(f"xs and ys {xs},{ys}")
+            source = ColumnDataSource({'x':xs,'y':ys})
+            plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+            plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
+            fastest_route_div.text = f"{result.path}"
+            current_color +=1
+            break
+        #except BaseException:
+         #   print("Ummm")
+          #  pass
 
     def gcr_grib_routing(event):
         pass        
@@ -257,6 +270,14 @@ def viewer(doc):
 
     current_boat = Div(text="You have not selected a boat", height= 70, width = 300)
     current_grib = Div(text="You have not selected a GRIB file", height  = 70, width= 300)
+
+    def update_routing_timedelta(attr,old,new):
+        nonlocal routing_timedelta
+        routing_timedelta = new
+        globals.current_timestep= new*60
+
+    routing_timedelta_slider = Slider(start=1,end=8, step=0.5, value=routing_timedelta, title="Chose Routing Timestep")
+    routing_timedelta_slider.on_change("value", update_routing_timedelta)
 
     input_warning_div = Div(text="")
     land_warning_div = Div(text="")
@@ -375,12 +396,12 @@ def viewer(doc):
         nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,land_hit,x_input_div,y_input_div, input_warning,water_warning,start_time_changed,start_time,start_time_div
         #print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
         if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
-            explainer_div.text = "<h1>Select a start and end point</h1><br>"
+            explainer_div.text = "<h2>Select a start and end point</h2><br>"
             x_input_div.text = "<h2>Enter your starting X coordinate below (longitude):</h2><br>"
             y_input_div.text ="<h2>Enter your starting Y coordinate below (latitude):</h2><br>"
         elif start_x_changed and start_y_changed and not end_x_changed and not end_y_changed:
             y_holder_1 , x_holder_1 = web_mercator_to_lat_lon(start_x,start_y)
-            explainer_div.text = (f"<h1> You have not selected an end point</h1><br>"
+            explainer_div.text = (f"<h2> You have not selected an end point</h2><br>"
                              f"<b>Starting Latitude:</b> {y_holder_1:.5f} <br>"
                              f"<b>Starting Longitude:</b> {x_holder_1:.5f} <br>")
             x_input_div.text = f"<h2> Input your end point's X coordinate (longitude): </h2><br>"
@@ -392,7 +413,7 @@ def viewer(doc):
                                   f"<b>Starting Longitude:</b> {x_holder_1:.5f} <br>"
                                   f"<b>End Latitude:</b> {y_holder_2:.5f}<br>"
                                   f"<b>End Longitude;</b> {x_holder_2:.5f}<br>")
-            x_input_div.text = f"<h1> Input is disabled, click map to enable and reset. </h1><br>"
+            x_input_div.text = f"<h2> Input is disabled, click map to enable and reset. </h2><br>"
             y_input_div.text = ""
 
         else:
@@ -532,7 +553,7 @@ def viewer(doc):
         update_div()
 
     def find_gcr_single():
-        nonlocal plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
+        nonlocal routing_timedelta,plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
         if number_of_points == 2:
             try:
                 while tap_count == 2:
@@ -542,7 +563,7 @@ def viewer(doc):
                         cur_grib = globals.selected_grib
                     else:
                         cur_grib = GRIB("dummy.grib2")
-                    routing = Routing_Model(path=cur_path,grib=cur_grib)
+                    routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
                     if grib_mode:
                         routing.create_big_circle_route()
                     else:
@@ -578,7 +599,7 @@ def viewer(doc):
                     current_intermediate_point_changed = True
                     check_current_path()
                     cur_path = globals.current_path
-                    routing = Routing_Model(path=cur_path,grib=cur_grib)
+                    routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
                     if grib_mode:
                         routing.create_big_circle_route()
                     else:
@@ -609,7 +630,7 @@ def viewer(doc):
     point_enter_button.on_event("button_click",manual_input)
     start_time_picker.on_change('value',update_start_time)
 
-    manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button,start_time_picker,route_point_slider)
+    manual_inputs = column(water_warning_div,input_warning_div,x_input_div,x_input,y_input_div,y_input,point_enter_button,start_time_picker,route_point_slider,routing_timedelta_slider)
 
     def update_root(enable_grib: bool):
         doc.clear()
