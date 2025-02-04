@@ -171,18 +171,6 @@ class Routing_Model:
         end_point = False #y
         gcr_distances = [self._distance_from_current_to_end_v2(True)]
         globals.current_timestep = self.timestep
-        #if gcr_distances[0] >= 10000:
-         #   globals.current_timestep = 720
-        #elif gcr_distances[0] < 10000 and gcr_distances[0] >= 5000:
-        #    globals.current_timestep = 300
-        #elif gcr_distances[0] < 5000 and gcr_distances[0] >= 2500:
-        #    globals.current_timestep = 240
-        #elif gcr_distances[0] < 2500 and gcr_distances[0] >= 1000:
-        #    globals.current_timestep = 300
-        #elif gcr_distances[0] < 1000 and gcr_distances[0] >= 500:
-         #   globals.current_timestep = 300
-        #elif gcr_distances[0] < 1000 and gcr_distances[0] >= 0:
-         #   globals.current_timestep = 300
         self._current_path._gcr_time = 0
         exit_land = False
         while not end_point:
@@ -200,12 +188,6 @@ class Routing_Model:
             print(f"gcr_distances are{gcr_distances}")
             if gcr_distances[-1] > (gcr_distances[-2]):
                 self._current_path.pop_great_circle_point()
-                #while len(gcr_distances) > 1:
-                    #   if gcr_distances[-1] > gcr_distances[-2]:
-                    #      gcr_distances.pop()
-                    #     self._current_path.pop_great_circle_point()
-                    #else:
-                        #   break
                 end_point = True
                 break
         self._current_path.pop_great_circle_point()
