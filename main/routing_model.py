@@ -45,7 +45,11 @@ class Routing_Model:
         return globe.is_ocean(lat,lon)
 
     def create_big_circle_route(self,ignore_exception:bool=False):
-        lat_s, lon_s , lat_e , lon_e = map(radians,[self._current_path.start_lattitude,self._current_path.start_longitude,self._current_path.end_lattitude,self._current_path.end_longitude])
+        lat_s, lon_s , lat_e , lon_e = map(radians,
+        [self._current_path.start_lattitude,
+         self._current_path.start_longitude,
+         self._current_path.end_lattitude,
+        self._current_path.end_longitude])
         delta_lat = lat_e - lat_s
         delta_lon = lon_e - lon_s
         earth_radius = 6.3781*(10**6) #in meters
@@ -206,7 +210,7 @@ class Routing_Model:
                 break
         self._current_path.pop_great_circle_point()
         self._current_path.pop_great_circle_point()
-        final_time = self.find_time_for_distance(gcr_distances[-1])
+        final_time = self.find_time_for_distance(gcr_distances[-2])
         self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
                 
         
@@ -454,7 +458,7 @@ class Routing_Model:
                     self.visited_points.append((new_lat,new_lon,new_time))
                 path = cur_path.append((new_lat,new_lon,new_time))
                 self._current_path._gcr_time -= globals.current_timestep
-                new_points = self.isometric(new_lat,new_lon,new_time,path)
+                new_points = self.isometric_online(new_lat,new_lon,new_time,path)
                 points.extend(new_points)
         return points
 

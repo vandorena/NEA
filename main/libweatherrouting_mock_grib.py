@@ -42,9 +42,7 @@ class mock_grib:
 
     def getWindAt(self, t, lat, lon):
         if not self.out_of_scope or t < self.out_of_scope:
-            return (
-                self.twd_var(t),
-                self.tws_var(t),
-            )
+            #self.twd_var(t),
+            return (self.starttwd, self.tws_var(t))
         else:
-            return Non
+            return None

@@ -218,7 +218,7 @@ def viewer(doc):
             print(f"Cur grib is {cur_grib} and mode is {grib_mode}")
             while not routing_object.end:
                 result = routing_object.step(timedelta=routing_timedelta)
-#                   print("ay it did a step")
+                print("ay it did a step")
             print("It finished routing")
             #print(result.path)
             path_pos_list = []
@@ -232,6 +232,9 @@ def viewer(doc):
             plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
             fastest_route_div.text = f"{result.path}"
             current_color +=1
+            found_time = result.path
+            print(result.path)
+            times_div.text = times_div.text + f"<br> <b> Fastest Route takes: </b> {found_time}"
             break
         #except BaseException:
          #   print("Ummm")
@@ -336,7 +339,9 @@ def viewer(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
-    explainer_div = Div(text="<h1>Select a start and end point</h1><br>")
+    times_div = Div(text="")
+    
+    explainer_div = Div(text="<h2>Select a start and end point</h2><br>")
 
     x_input_div = Div(text="<h2>Enter your starting X coordinate below (longitude):</h2><br>")
     x_input = TextInput(title = 'X:')
@@ -419,12 +424,12 @@ def viewer(doc):
         else:
             print("This shouldn't do this Interactive Viewer.py line 188")
         if input_warning:
-            input_warning_div.text = "<h1> Only number inputs are allowed.</h1><br> <b> Ensure all inputs are of decimal form, i.e. 51.231323</b><br>"
+            input_warning_div.text = "<h2> Only number inputs are allowed.</h2><br> <b> Ensure all inputs are of decimal form, i.e. 51.231323</b><br>"
             input_warning = False
         else:
             input_warning_div.text = ""
         if water_warning:
-            water_warning_div.text = "<h1> You can only place points in water. </h1> <br>"
+            water_warning_div.text = "<h2> You can only place points in water. </h2> <br>"
             water_warning = False
         else:
             water_warning_div.text = ""
