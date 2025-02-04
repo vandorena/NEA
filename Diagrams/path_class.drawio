@@ -1,0 +1,22 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36" version="26.0.10">
+  <diagram name="Page-1" id="K3FfubEGSDn4NSsgAsIL">
+    <mxGraphModel dx="1105" dy="549" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Y2QN1RSRM0bIlzSxlELg-1" value="Path" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=20;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="50" width="270" height="550" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2QN1RSRM0bIlzSxlELg-2" value="+start_lattitude: float&lt;div&gt;+end_lattitude: float&lt;/div&gt;&lt;div&gt;+start_longitude: float&lt;/div&gt;&lt;div&gt;+end_longitude: float&lt;/div&gt;&lt;div&gt;+start_time: datetime&lt;/div&gt;&lt;div&gt;+_current_point_lat: float&lt;/div&gt;&lt;div&gt;+_current_point_lon: float&lt;/div&gt;&lt;div&gt;+current_boat: boat&lt;/div&gt;&lt;div&gt;+started: boolean&lt;/div&gt;&lt;div&gt;+ended: boolean&lt;br&gt;+_gcr_time: integer&lt;/div&gt;&lt;div&gt;+path_data_names: list&lt;/div&gt;&lt;div&gt;+path_data: dict (&quot;lat&quot;: list, &quot;lon&quot;: list, &quot;great_circle_lat&quot;: list, &quot;great_circle_lon&quot;: list, &quot;great_circle_times&quot;: list, &quot;times&quot;: list, &quot;speeds&quot;: list, &quot;windspeed&quot;: list, &quot;gust_speed&quot;: list, &quot;wind_direction&quot;: list, &quot;wave_height&quot;: list, &quot;wave_direction&quot;: list, &quot;wave_height&quot;: list, &quot;wave_direction&quot;: list, &quot;air_pressure&quot;: list, &quot;ocean_current_direction&quot;: list, &quot;ocean_current_speed&quot;: list, &quot;gcr_start_time&quot;: Nonetype)&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Y2QN1RSRM0bIlzSxlELg-1">
+          <mxGeometry y="20" width="270" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2QN1RSRM0bIlzSxlELg-3" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="Y2QN1RSRM0bIlzSxlELg-1">
+          <mxGeometry y="340" width="270" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2QN1RSRM0bIlzSxlELg-4" value="+set_start: None&lt;div&gt;+append_great_circle_point(lat: float, lon: float, time: datetime): None&lt;/div&gt;&lt;div&gt;+pop_great_circle_point: None&lt;/div&gt;&lt;div&gt;+set_end: None&lt;/div&gt;&lt;div&gt;+get_previous_point: list&lt;/div&gt;&lt;div&gt;+ log: None&lt;/div&gt;&lt;div&gt;+getXgetY: tuple&lt;/div&gt;&lt;div&gt;+_find_index_times(time:datetime): datetime&lt;/div&gt;&lt;div&gt;+_find_index_matcher_list(lat:float, lon: float) : list&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="Y2QN1RSRM0bIlzSxlELg-1">
+          <mxGeometry y="368" width="270" height="182" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
