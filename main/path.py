@@ -87,7 +87,7 @@ class Path:
     def getXgetY(self)-> tuple:
         return self.path_data["lat"],self.path_data["lon"]
 
-    def _find_index_times(self,time)->int:
+    def _find_index_times(self,time)->datetime:
         if time in self.path_data["times"]:
             return self.path_data["times"].index(time)
         else:

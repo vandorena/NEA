@@ -19,6 +19,9 @@ from libweatherrouting_routing import Routing
 from libweatherrouting_linearbestisorouter import LinearBestIsoRouter
 from global_land_mask import globe
 from libweatherrouting_mock_grib import mock_grib
+import base64
+import os
+import uuid
 
 class NotWaterError(Exception):
     "Exception Governing if a point is not in water"
@@ -198,7 +201,8 @@ def viewer(doc):
     fastest_route_div = Div(text="")
 
     def full_routing(event):
-        nonlocal routing_timedelta, start_time, end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point, intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
+        nonlocal routing_timedelta, start_time, end_x, end_y,start_x,start_y,tap_count,number_of_points,grib_mode,current_intermediate_point
+        nonlocal intermediate_points, plot, plot_colors,current_color,current_boat,intermediate_gcr_flag,intermediate_point_start_time,land_hit, current_intermediate_point_changed
         #try:
         end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
         start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
@@ -285,7 +289,31 @@ def viewer(doc):
     input_warning_div = Div(text="")
     land_warning_div = Div(text="")
 
-    grib_file_input = FileInput(accept="<.grib>,<.grib2>,<.grb>")
+    grib_file_input = FileInput(accept="<.grib>,<.grib2>,<.grb>,<.png>")
+
+    def file_input(attr,old,new):
+        nonlocal grib_file_input, current_grib , grib_dropdown, grib_list
+        if grib_file_input.value is not None:
+            new_file = base64.b64decode(new)
+            print("in")
+            now  = datetime.datetime.now()
+            filename = f"Uploaded_at_{now.hour}:{now.minute}_on_{now.day}-{now.month}-{now.year}" + ".grib2"
+            path = os.path.join("main","GRIBS",filename)
+            with open(path,"wb") as current_file:
+                current_file.write(new_file)
+            try:
+                globals.selected_grib = GRIB(filename)
+            except BaseException:
+                print("Oppos")
+            print("Done")
+            print()
+            grib_list = []
+            grib_list = create_grib_list()
+            grib_dropdown.menu = []
+            grib_dropdown.menu = grib_list
+        
+
+    grib_file_input.on_change("value",file_input)
 
     button_Start_Routing_Full= Button(
         label="Start Routing",
@@ -557,8 +585,9 @@ def viewer(doc):
         update_datetime_picker(start_time)
         update_div()
 
-    def find_gcr_single():
-        nonlocal routing_timedelta,plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point, intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
+    def find_gcr():
+        nonlocal routing_timedelta,plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point
+        nonlocal intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
         if number_of_points == 2:
             try:
                 while tap_count == 2:
@@ -606,7 +635,7 @@ def viewer(doc):
                     cur_path = globals.current_path
                     routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
                     if grib_mode:
-                        routing.create_big_circle_route()
+                        routing.create_big_circle_route_v2()
                     else:
                         try:
                             routing.create_big_circle_route_online_v2()
@@ -641,10 +670,10 @@ def viewer(doc):
         doc.clear()
         if not enable_grib:
             bottom_row = row(button_home, button_enable_grib)
-            layout1 = column(explainer_div,current_boat, button_Start_Routing_Full,button_Start_Routing_GCR,boat_dropdown,manual_inputs,bottom_row)
+            layout1 = column(explainer_div,current_boat, button_Start_Routing_GCR,boat_dropdown,manual_inputs,bottom_row)
         else:
             bottom_row = row(button_home, button_disable_grib)
-            layout1 = column(explainer_div,current_boat, button_Start_Routing_Full_GRIB, button_Start_Routing_GCR_Grib, boat_dropdown,grib_file_input,manual_inputs,bottom_row)
+            layout1 = column(explainer_div,current_boat,current_grib, button_Start_Routing_Full_GRIB, button_Start_Routing_GCR_Grib, row(boat_dropdown,grib_dropdown),grib_file_input,manual_inputs,bottom_row)
 
         
         layout_main = row(plot,layout1)
@@ -653,6 +682,7 @@ def viewer(doc):
     def update_root_false():
         nonlocal grib_mode
         grib_mode = False
+        globals.selected_grib = None
         update_root(False)
 
     def update_datetime_picker(start_time):
@@ -666,8 +696,8 @@ def viewer(doc):
         icon=BUTTON_STYLE["icons"][0]
         )
     
-    button_Start_Routing_GCR.on_event('button_click', find_gcr_single)
-    button_Start_Routing_GCR_Grib.on_event('button_click', find_gcr_single)
+    button_Start_Routing_GCR.on_event('button_click', find_gcr)
+    button_Start_Routing_GCR_Grib.on_event('button_click', find_gcr)
 
     button_disable_grib.on_event("button_click",update_root_false)
     

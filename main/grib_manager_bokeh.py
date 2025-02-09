@@ -19,10 +19,14 @@ def find_gribs():
 
 def find_gribsV2():
     folder_list = os.listdir(os.path.join("main","GRIBS"))
+    CURRENT_GRIBS["grib_list"] = []
     for i in range(0,len(folder_list)):
         if folder_list[i][-4:] != ".txt":
-            CURRENT_GRIBS["grib_list"].append(folder_list[i])
-            CURRENT_GRIBS[folder_list[i]] = GRIB(folder_list[i])
+            try:
+                CURRENT_GRIBS["grib_list"].append(folder_list[i])
+                CURRENT_GRIBS[folder_list[i]] = GRIB(folder_list[i])
+            except BaseException:
+                pass
         
 
 def grib_button(grib_name):

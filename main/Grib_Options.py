@@ -138,20 +138,23 @@ class GRIB:
     def __init__(self, file_name:str, file_name_flag = None) -> None:
         """File_name includes the .grib,.grib2 or .grb extension"""
         self._filename = file_name
+        self.filename_holder = file_name
         if self._filename != "dummy.grib2":
             self.ni = 0
             self.nj = 0
             self._extension = self._get_extension()
             self._filename_flag = file_name_flag
             if file_name_flag is None:
-                self._path = os.path.join("GRIBS",file_name)
+                self._path = os.path.join("main","GRIBS",file_name)
             else:
                 self._path = file_name
             # Maybe find the index of the . and backindex to change file ext to .txt, then store .txt after finding if it exisits. THis would make asymmetric encode, and would result in quicker read times for all gribs, this would resuce inconsistencies
             self._path_ok = True
+            print(self._path)
             if not os.path.exists(self._path):
                 self._path_ok = False
                 print(1)
+                
                 raise FileNotFoundError(f"Couldn't find a grib file at {self._path}")
             else:
                 print(2)
@@ -198,7 +201,7 @@ class GRIB:
     def _check_txt_path(self)->bool:
         self._create_txt_path()
         if self._filename_flag is None:
-            checkpath = os.path.join("GRIBS",self._filename)
+            checkpath = os.path.join("main","GRIBS",self._filename)
         values = os.path.exists(checkpath)
         self._restore_filename()
         return values
@@ -216,7 +219,7 @@ class GRIB:
     def _create_txt_path(self, path_flag: bool=False)->None:
         if self._filename[-5:] == ".grib":
             self._filename = self._filename[:-5]
-        elif self._filename[-4:] == ".grb":
+        elif self._filename[-4:] == ".grb" or self._filename[-4:] == ".txt":
             self._filename = self._filename[:-4]
         elif self._filename[-6:] == ".grib2":
             self._filename = self._filename[:-6]
@@ -224,12 +227,12 @@ class GRIB:
             raise Invalid_grib_extension(f"Extension of {self._filename} is invalid")
         self._filename = self._filename +  ".txt"
         if path_flag == True:
-            self._path = os.path.join("GRIBS",self._filename)
+            self._path = os.path.join("main","GRIBS",self._filename)
         return
 
     def _translate_to_txt(self):
         self._create_txt_path()
-        with open(os.path.join("GRIBS",self._filename),"a") as file:
+        with open(os.path.join("main","GRIBS",self._filename),"a") as file:
             index_metadata = " ".join(f"{index} " for index in self._data["index"] )
             file.write(index_metadata +"\n")
             shotname_metadata = " ".join(f"{sn} " for sn in self._data["short_name_list"])
@@ -326,10 +329,14 @@ class GRIB:
                     file.close()
                     raise Bad_Grib("Grib is corrupt")     
         self._data_digest(big_list)
+        self._format_lat_lon()
 
     def _find_line_index(self,lat,lon)->int:
-        lat_index = self._find_closest_lat(lat)
-        lon_index = self._find_closest_lon(lon)
+        try:
+            lat_index = self._find_closest_lat(lat)
+            lon_index = self._find_closest_lon(lon)
+        except Exception:
+            raise Point_not_in_weather_values
         print(type(lat_index))
         print(lat_index)
         print(type(self._data["longitudes"]))
@@ -338,7 +345,7 @@ class GRIB:
     
     def read_metadata(self):
         self._create_txt_path()
-        with open(os.path.join("GRIBS",self._filename),"r") as file:
+        with open(os.path.join("main","GRIBS",self._filename),"r") as file:
             for i in range(7):
                 current_line = file.readline()
                 if i == 0:
@@ -356,29 +363,49 @@ class GRIB:
                 elif i == 6:
                     self._data["longitudes"] = current_line.split()
 
+    def _find_twd_tws(self,list):
+        u = list[0]
+        v = list[1]
+        tws = (u**2 + v**2)**(0.5)
+        twd = np.degrees(np.arctan2(v,u))
+        if twd < 0:
+            twd +=360
+        return twd,tws
 
-    def read_single_line(self,lat:float,lon:float)->list:
+
+    def getWindAt(self,t,lat:float,lon:float)->list:
         line_number = self._find_line_index(lat,lon)
         self._create_txt_path()
-        with open(os.path.join("GRIBS",self._filename),"r") as file:
+        with open(os.path.join("main","GRIBS",self._filename),"r") as file:
             single_line = next(islice(file,line_number,line_number+1),None)
             if single_line != None:
                 print(type(single_line))
                 self._restore_filename()
-                return single_line.split()
+                return self._find_twd_tws(list(map(float,single_line.split())))
             else:
                 raise LineNotInFile(f"File does not contain a line: {line_number}")
         self._restore_filename()
 
+    def _format_lat_lon(self):
+        self._data["latitudes"] = list(map(float,self._data["latitudes"]))
+        self._data["longitudes"] = list(map(float,self._data["longitudes"]))
+
     def _find_closest_lat(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists"""
+        self._format_lat_lon()
         index = None
-        if str(lat) in self._data["latitudes"]:
-            index = self._data["latitudes"].index(str(lat))
+        print("latitudess")
+        print(self._data["latitudes"])
+        if lat in self._data["latitudes"]:
+            print("oop")
+            index = self._data["latitudes"].index(lat)
         else:
+            print("evppp")
+        
             for i in range(1,len(self._data["latitudes"])):
                 if float(self._data["latitudes"][i-1]) < lat and float(self._data["latitudes"][i]) > lat:
                     index = i
+                    print(f"got a new_index {i}")
                     break
         if index is None:
             raise Exception("i dont know whats up")
@@ -386,15 +413,17 @@ class GRIB:
     
     def _find_closest_lon(self,lat:float)->float:
         """Assumes list is sorted, and assumes will be in list range, and assumes list exists returns index"""
+        self._format_lat_lon()
         index = None
         print("")
         print("pas")
         print(self._data["longitudes"])
-        print("Boobies")
         print("Hha")
-        if str(lat) in self._data["longitudes"]:
-            index = self._data["longitudes"].index(str(lat))
+        if lat in self._data["longitudes"]:
+            print("1")
+            index = self._data["longitudes"].index(lat)
         else:
+            print("sss")
             for i in range(1,len(self._data["longitudes"])):
                 if float(self._data["longitudes"][i-1]) < lat and float(self._data["longitudes"][i]) > lat:
                     index = i
@@ -405,11 +434,17 @@ class GRIB:
 
     def read_point_weather(self, lat:float,lon:float) -> dict:
         """expect self._data values to be npndarrays 2d"""
-        lattitude = self._find_closest_lat(lat)
-        longitude = self._find_closest_lon(lon)
+        try:
+            lattitude = self._find_closest_lat(lat)
+            longitude = self._find_closest_lon(lon)
+        except Exception:
+            raise Point_not_in_weather_values(f"The point was not found in the grib")
         point_data_dict = {
             "index":[],
             }
+        print("index")
+        print(self._data["index"])
+        print(self._data)
         for i in range(0,len(self._data["index"])):
             if self._data[self._data["index"][i]][lattitude,longitude] != None:
                 point_data_dict[self._data["index"][i]] = self._data[self._data["index"][i]][lattitude,longitude]
@@ -452,7 +487,7 @@ class GRIB:
             self._data["time_list"].append(time)
             print(self._data["time_list"])
         try:
-            if not os.path.exists(os.path.join("GRIBS","log.txt")):
+            if not os.path.exists(os.path.join("main","GRIBS","log.txt")):
                 print("No")
                 print(self._data[self._data["index"][1]] )
                 print(self._data[self._data["index"][3]] )
@@ -460,7 +495,7 @@ class GRIB:
                 print(self.ni)
                 print(self._data["longitudes"][-1])
                 print(self._last_long)
-                with open(os.path.join("GRIBS","log.txt"),"w") as file:
+                with open(os.path.join("main","GRIBS","log.txt"),"w") as file:
                     file.write(self._data[self._data["index"][1]])
                     file.write("\n \n\n\n")
                     file.write(self._data[self._data["index"][3]])
