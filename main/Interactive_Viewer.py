@@ -109,7 +109,7 @@ def viewer(doc):
             cur_path_end_x,cur_path_end_y = 2,2
             cur_path_boat = cur_boat
         if (cur_path_start_x != start_x or cur_path_start_y != start_y or cur_path_end_x != end_x or cur_path_end_y != end_y or cur_path_start_time or cur_path_boat != cur_boat) and number_of_points == 2:
-            print("Wrong Way on line 103")
+            ##print("Wrong Way on line 103")
             start_lat,start_lon = web_mercator_to_lat_lon(start_x,start_y)
             end_lat, end_lon = web_mercator_to_lat_lon(end_x,end_y)
             try:
@@ -119,7 +119,7 @@ def viewer(doc):
         elif current_intermediate_point_changed:
             current_intermediate_point_changed = False
             if current_intermediate_point == 0:
-                print("only once here")
+                #print("only once here")
                 start_flag = True
                 start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
                 end_lat , end_lon = web_mercator_to_lat_lon(intermediate_points[current_intermediate_point][0],intermediate_points[current_intermediate_point][1])
@@ -135,8 +135,8 @@ def viewer(doc):
                 except ValueError:
                     globals.current_path = Path(start_time =datetime.datetime.now(), start_lattitude=start_lat,start_longitude=start_lon, end_latitude=end_lat,end_longitude=end_lon,boat=cur_boat)
             else:
-                print("It got here")
-                print(f"before {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
+                #print("It got here")
+                #print(f"before {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
                 if intermediate_gcr_flag == True:
                     globals.current_path.start_lattitude = globals.current_path.path_data["great_circle_lat"][-1]
                     globals.current_path.start_longitude = globals.current_path.path_data["great_circle_lon"][-1]
@@ -149,7 +149,7 @@ def viewer(doc):
                     globals.current_path.end_lattitude = cur_point_lat
                     globals.current_path.end_longitude = cur_point_lon
                     globals.current_path.start_time = globals.current_path.path_data["times"][-1]
-                print(f"After {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
+                #print(f"After {globals.current_path.start_lattitude}, {globals.current_path.start_longitude}   end { globals.current_path.end_lattitude}, {globals.current_path.end_longitude}")
                
 
 
@@ -158,8 +158,8 @@ def viewer(doc):
         boat_list =[]
         for i in range(0,len(globals.CURRENT_BOATS["boat_list"])):
             boatname = globals.CURRENT_BOATS["boat_list"][i]
-            #print(boatname)
-            #print(globals.CURRENT_BOATS[boatname])
+            ##print(boatname)
+            ##print(globals.CURRENT_BOATS[boatname])
             ntuple = (boatname)
             boat_list.append(ntuple)
         return boat_list
@@ -169,8 +169,8 @@ def viewer(doc):
         grib_list =[]
         for i in range(0,len(globals.CURRENT_GRIBS["grib_list"])):
             gribname = globals.CURRENT_GRIBS["grib_list"][i]
-            #print(gribname)
-            #print(globals.CURRENT_BOATS[gribname])
+            ##print(gribname)
+            ##print(globals.CURRENT_BOATS[gribname])
             ntuple = (gribname)
             grib_list.append(ntuple)
         return grib_list
@@ -178,13 +178,13 @@ def viewer(doc):
     def update_boat(event):
         nonlocal current_boat
         globals.selected_boat = globals.CURRENT_BOATS[event.item]
-        #print(globals.selected_boat)
+        ##print(globals.selected_boat)
         current_boat.text = f"Current Boat: {event.item}"
 
     def update_grib(event):
         nonlocal current_grib
         globals.selected_grib = globals.CURRENT_GRIBS[event.item]
-        #print(globals.selected_grib)
+        ##print(globals.selected_grib)
         current_grib.text = f"Current GRIB: {event.item}"
 
     def update_x_input(attr,old,new):
@@ -206,15 +206,20 @@ def viewer(doc):
         #try:
         end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
         start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
-        #print("please help me, it should be coming here")
+        ##print("please help me, it should be coming here")
         #try:
         while tap_count == number_of_points:
-            print("Begann routing")
+            #print("Begann routing")
             if grib_mode:
-                cur_grib = globals.selected_grib.filename_holder
+                cur_grib = globals.selected_grib
+                print(f"Used current Grib")
+            elif globals.selected_grib is None:
+                cur_grib = mock_grib(13,120,1)
+                print(f"Used Mock Grib")
             else:
                 cur_grib = None
                 cur_grib = mock_grib(13,120,1)
+                print("Used Mock grib after failing to use current grib")
             track = intermediate_points + [(end_lat,end_lon)]
             cur_boat = globals.selected_boat
             routing_object = Routing(algorithm=LinearBestIsoRouter, polar=cur_boat,track=track,grib=cur_grib,startDatetime=start_time,startPosition=(start_lat,start_lon))
@@ -222,32 +227,33 @@ def viewer(doc):
             print(f"Cur grib is {cur_grib} and mode is {grib_mode}")
             while not routing_object.end:
                 result = routing_object.step(timedelta=routing_timedelta)
-                print("ay it did a step")
-            print("It finished routing")
-            #print(result.path)
+                print("step")
+                print(result.path)
+            #print("It finished routing")
+            ##print(result.path)
             path_pos_list = []
             for isopoint in result.path:
                 path_pos_list.append(isopoint.pos)
             lats, lons = zip(*path_pos_list)
             xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-            #print(f"xs and ys {xs},{ys}")
+            ##print(f"xs and ys {xs},{ys}")
             source = ColumnDataSource({'x':xs,'y':ys})
             plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
             plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
             fastest_route_div.text = f"{result.path}"
             current_color +=1
             found_time = result.path
-            print(result.path)
+            #print(result.path)
             times_div.text = times_div.text + f"<br> <b> Fastest Route takes: </b> {found_time}"
             break
         #except BaseException:
-         #   print("Ummm")
+         #   #print("Ummm")
           #  pass
 
-    def gcr_grib_routing(event):
+    def gcr_grib_routing(event): # Deprecated
         pass        
 
-    def full_grib_routing(event):
+    def full_grib_routing(event): #Deprecated
         pass
 
 
@@ -295,7 +301,7 @@ def viewer(doc):
         nonlocal grib_file_input, current_grib , grib_dropdown, grib_list
         if grib_file_input.value is not None:
             new_file = base64.b64decode(new)
-            print("in")
+            #print("in")
             now  = datetime.datetime.now()
             filename = f"Uploaded_at_{now.hour}:{now.minute}_on_{now.day}-{now.month}-{now.year}" + ".grib2"
             path = os.path.join("main","GRIBS",filename)
@@ -305,8 +311,8 @@ def viewer(doc):
                 globals.selected_grib = GRIB(filename)
             except BaseException:
                 print("Oppos")
-            print("Done")
-            print()
+            #print("Done")
+            #print()
             grib_list = []
             grib_list = create_grib_list()
             grib_dropdown.menu = []
@@ -324,14 +330,14 @@ def viewer(doc):
         )
     button_Start_Routing_Full.on_event('button_click', full_routing)
 
-    button_Start_Routing_Full_GRIB= Button(
+    button_Start_Routing_Full_GRIB= Button(    #Initialising Bokeh Widget
         label="Start Routing",
         button_type=BUTTON_STYLE["type"][2],
         width=BUTTON_STYLE["width"],
         height=BUTTON_STYLE["height"],
         icon=BUTTON_STYLE["icons"][0]
         )
-    button_Start_Routing_Full_GRIB.on_event('button_click', full_grib_routing)
+    button_Start_Routing_Full_GRIB.on_event('button_click', full_routing) #Enabling event listener, and the python callback associated with it
 
     button_Start_Routing_GCR= Button(
         label="Find Great Circle Route",
@@ -422,12 +428,12 @@ def viewer(doc):
     route_point_slider.on_change("value", update_num_of_points)
 
     
-    def update_lines():
+    def update_lines(): #Deprecae+ted
         pass
 
     def update_div():
         nonlocal start_x,start_y, end_x , end_y, start_x_changed,start_y_changed,end_x_changed,end_y_changed,land_hit,x_input_div,y_input_div, input_warning,water_warning,start_time_changed,start_time,start_time_div
-        #print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
+        ##print(f"start_x_changed: {start_x_changed}, start_y_changed: {start_y_changed}, end_x_changed: {end_x_changed}, end_y_changed: {end_y_changed}")
         if not start_x_changed and not start_y_changed and not end_x_changed and not end_y_changed:
             explainer_div.text = "<h2>Select a start and end point</h2><br>"
             x_input_div.text = "<h2>Enter your starting X coordinate below (longitude):</h2><br>"
@@ -513,14 +519,15 @@ def viewer(doc):
             update_div()
     
     def on_tap(event):
-        nonlocal fastest_route_div, tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed,water_warning, number_of_points,intermediate_points
+        nonlocal fastest_route_div, tap_count, start_x,start_y,end_x,end_y,start_x_changed,start_y_changed,end_x_changed,end_y_changed
+        nonlocal water_warning, number_of_points,intermediate_points
         original_tap_count = tap_count
         x,y = event.x,event.y
         water_overide = False
         try:
             tap_count +=1
             lat,lon = web_mercator_to_lat_lon(x,y)
-            if not is_ocean(lat,lon) and tap_count !=3:
+            if not is_ocean(lat,lon) and tap_count !=(number_of_points+1):
                 raise NotWaterError
             if tap_count == 1:
                 pin_point_source.data = {'x':[], 'y':[], 'color':[]}
@@ -533,7 +540,7 @@ def viewer(doc):
                 update_lines()
             elif tap_count > 1 and tap_count < number_of_points:
                 intermediate_points.append((x,y))
-                print(f"Intermediate points are {intermediate_points}")
+                #print(f"Intermediate points are {intermediate_points}")
                 plot.scatter(x=[x],y=[y],size=8,fill_color="orange",line_color="yellow",line_width=1)
             elif tap_count == number_of_points:
                 pin_point_source.data= {'x':[],'y':[],'color':[]}
@@ -589,43 +596,57 @@ def viewer(doc):
         nonlocal routing_timedelta,plot, start_x,start_y ,end_x,end_y,current_color,plot_colors, tap_count, number_of_points, current_intermediate_point
         nonlocal intermediate_gcr_flag, intermediate_points, current_intermediate_point_changed
         if number_of_points == 2:
-            try:
-                while tap_count == 2:
-                    check_current_path()
-                    cur_path = globals.current_path
-                    if grib_mode:
-                        cur_grib = globals.selected_grib
-                    else:
-                        cur_grib = GRIB("dummy.grib2")
-                    routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
-                    if grib_mode:
-                        routing.create_big_circle_route()
-                    else:
-                        try:
-                            routing.create_big_circle_route_online_v2()
-                        except ContinuedOutWaterException:
-                            land_hit = True
-                            print(f"Hit land with {cur_path.path_data}")
-                            update_div()
-                    lats = cur_path.path_data['great_circle_lat']
-                    lons = cur_path.path_data['great_circle_lon']
+           # try:
+            while tap_count == 2:
+                check_current_path()
+                cur_path = globals.current_path
+                if grib_mode:
+                    cur_grib = globals.selected_grib
+                    if cur_grib is None:
+                        return
+                else:
+                    cur_grib = GRIB("dummy.grib2")
+               # #print("curgrib iss")
+                ##print(cur_grib)
+                routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
+                if grib_mode:
+                    try:
+                        routing.create_big_circle_route_v2()
+                    except BaseException:
+                        cur_path.clear_great_circle()
+                        routing = Routing_Model(path=cur_path,grib=GRIB("dummy.grib2"),timestep=routing_timedelta)
+                        routing.create_big_circle_route_online_v2()
+                else:
+                    try:
+                        routing.create_big_circle_route_online_v2()
+                    except ContinuedOutWaterException:
+                        land_hit = True
+                       # #print(f"Hit land with {cur_path.path_data}")
+                        update_div()
+                lats = cur_path.path_data['great_circle_lat']
+                lons = cur_path.path_data['great_circle_lon']
+                try:
                     xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-                    print(f"xs and ys {xs},{ys}")
-                    source = ColumnDataSource({'x':xs,'y':ys})
-                    plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-                    plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
-                    current_color +=1
-                    break
-            except BaseException:
-                print("There was an error ,l ine 470 of interactive viewer")
+                except ValueError:
+                    return
+                ##print(f"xs and ys {xs},{ys}")
+                source = ColumnDataSource({'x':xs,'y':ys})
+                plot.line(source=source,legend_label=f"Great Circle Route between ({cur_path.start_lattitude},{cur_path.start_longitude}) and ({cur_path.end_lattitude},{cur_path.end_longitude})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
+                current_color +=1
+                break
+            #except BaseException:
+             #   #print("There was an error ,l ine 470 of interactive viewer")
         else:
             end_lat,end_lon = web_mercator_to_lat_lon(end_x,end_y)
             start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
-            print("please help me, it should be coming here")
+           # #print("please help me, it should be coming here")
             #try:
             while tap_count == number_of_points:
                 if grib_mode:
                     cur_grib = globals.selected_grib
+                    if cur_grib is None:
+                        return
                 else:
                     cur_grib = GRIB("dummy.grib2")
                 while current_intermediate_point != (len(intermediate_points)+1): # Not sure of this
@@ -635,18 +656,23 @@ def viewer(doc):
                     cur_path = globals.current_path
                     routing = Routing_Model(path=cur_path,grib=cur_grib,timestep=routing_timedelta)
                     if grib_mode:
-                        routing.create_big_circle_route_v2()
+                        try:
+                            routing.create_big_circle_route_v2()
+                        except BaseException:
+                            cur_path.clear_great_circle()
+                            routing = Routing_Model(path=cur_path,grib=GRIB("dummy.grib2"),timestep=routing_timedelta)
+                            routing.create_big_circle_route_online_v2()
                     else:
                         try:
                             routing.create_big_circle_route_online_v2()
                         except ContinuedOutWaterException:
                             land_hit = True
-                            print(f"Hit land with {cur_path.path_data}")
+                            ##print(f"Hit land with {cur_path.path_data}")
                             update_div()
                     lats = cur_path.path_data['great_circle_lat']
                     lons = cur_path.path_data['great_circle_lon']
                     xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
-                    print(f"xs and ys {xs},{ys}")
+                    #print(f"xs and ys {xs},{ys}")
                     source = ColumnDataSource({'x':xs,'y':ys})
                     plot.line(source=source,legend_label=f"Great Circle Route between ({start_lat},{start_lon}) and ({end_lat},{end_lon})", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
                     plot.scatter(source=source,color=plot_colors[(current_color%len(plot_colors))-1],size=4)
@@ -656,7 +682,7 @@ def viewer(doc):
                 current_color +=1
                 break
             #except BaseException:
-             #   print("There was an error with multiple gcrs of interactive viewer")
+             #   #print("There was an error with multiple gcrs of interactive viewer")
                         
 
 

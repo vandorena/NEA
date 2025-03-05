@@ -3,7 +3,8 @@ import requests_cache
 import retry_requests
 import datetime
 
-def fallback_nws_request(lat,lon,time:datetime):
+def fallback_nws_request(latitude,longitude,time:datetime): # Deprecated - Unfinsihed was going to be a fallback
+    "INACTIVE"
     first_request_url = f"https://api.weather.gov/points/{latitude},{longitude}"
     first_response = requests.get(first_request_url)
     while first_response.status_code != 200:
@@ -16,7 +17,7 @@ def fallback_nws_request(lat,lon,time:datetime):
 
     index = None
     difference = datetime.timedelta.max
-
+    response_data = first_response_data
     for i in range(0,len(response_data["minutely_15"]["time"])):
             current_datetime = datetime.datetime.fromisoformat(response_data["minutely_15"]["time"][i])
             delta = abs(current_datetime - time)
@@ -25,7 +26,10 @@ def fallback_nws_request(lat,lon,time:datetime):
                 index = i
     
 
-def make_10mvu_request(lat,lon,time:datetime):
+def make_10mvu_request(lat,lon,time:datetime): # Active
+    """
+    Makes a request to OpenMeteo API, and finds the windspeed and direction of a given point and a given time.
+    """
     #print("Request made!")
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -63,4 +67,5 @@ def make_10mvu_request(lat,lon,time:datetime):
     return response_data["minutely_15"]["windspeed_10m"][index], response_data["minutely_15"]["winddirection_10m"][index]
 
 if __name__ == "__main__":
+    #Test
     print(make_10mvu_request(50,50,datetime.datetime.now()))

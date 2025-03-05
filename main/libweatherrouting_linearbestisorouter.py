@@ -49,55 +49,56 @@ class LinearBestIsoRouter(Router):
                 path.append(iso[path[-1].prevIdx])
             path = path[::-1]
             position = path[-1].pos
-        if self.grib is None or self.grib.getWindAt(
-            time + datetime.timedelta(hours=timedelta), end[0], end[1]
-        ):
-            #print(2)
-            if lastlog is not None and len(lastlog.isochrones) > 0:
-                #print(2.1)
-                isoc = isoF(
-                    time + datetime.timedelta(hours=timedelta),
-                    timedelta,
-                    lastlog.isochrones,
-                    end,
-                )
-            else:
-                #print(2.2)
-                nwdist = utils.pointDistance(end[0], end[1], start[0], start[1])
-                #print(2.21)
-                isoc = isoF(
-                    time + datetime.timedelta(hours=timedelta),
-                    timedelta,
-                    [[IsoPoint((start[0], start[1]), time=time, nextWPDist=nwdist)]],
-                    end,
-                )
-                #print(2.22)
+        try:
+            if self.grib is None or self.grib.getWindAt(
+                time + datetime.timedelta(hours=timedelta), end[0], end[1]
+            ):
+                #print(2)
+                if lastlog is not None and len(lastlog.isochrones) > 0:
+                    #print(2.1)
+                    isoc = isoF(
+                        time + datetime.timedelta(hours=timedelta),
+                        timedelta,
+                        lastlog.isochrones,
+                        end,
+                    )
+                else:
+                    #print(2.2)
+                    nwdist = utils.pointDistance(end[0], end[1], start[0], start[1])
+                    #print(2.21)
+                    isoc = isoF(
+                        time + datetime.timedelta(hours=timedelta),
+                        timedelta,
+                        [[IsoPoint((start[0], start[1]), time=time, nextWPDist=nwdist)]],
+                        end,
+                    )
+                    #print(2.22)
 
-            #print(2.3)
-            nearest_dist = self.getParamValue("minIncrease")
-            nearest_solution = None
-            for p in isoc[-1]:
-                distance_to_end_point = p.pointDistance(end)
-                if distance_to_end_point < self.getParamValue("minIncrease"):
-                    # (twd,tws) = self.grib.getWindAt (time + datetime.timedelta(hours=timedelta),
-                    # p.pos[0], p.pos[1])
-                    print(f"pos {p.pos}, speed {p.speed}")
-                    maxReachDistance = utils.maxReachDistance(p.pos, p.speed)
-                    if distance_to_end_point < abs(maxReachDistance * 1.1):
-                        if (
-                            not self.pointValidity or self.pointValidity(end[0], end[1])
-                        ) and (
-                            not self.lineValidity
-                            or self.lineValidity(end[0], end[1], p.pos[0], p.pos[1])
-                        ):
-                            if distance_to_end_point < nearest_dist:
-                                nearest_dist = distance_to_end_point
-                                nearest_solution = p
-            if nearest_solution:
-                generate_path(nearest_solution)
+                #print(2.3)
+                nearest_dist = self.getParamValue("minIncrease")
+                nearest_solution = None
+                for p in isoc[-1]:
+                    distance_to_end_point = p.pointDistance(end)
+                    if distance_to_end_point < self.getParamValue("minIncrease"):
+                        # (twd,tws) = self.grib.getWindAt (time + datetime.timedelta(hours=timedelta),
+                        # p.pos[0], p.pos[1])
+                        print(f"pos {p.pos}, speed {p.speed}")
+                        maxReachDistance = utils.maxReachDistance(p.pos, p.speed)
+                        if distance_to_end_point < abs(maxReachDistance * 1.1):
+                            if (
+                                not self.pointValidity or self.pointValidity(end[0], end[1])
+                            ) and (
+                                not self.lineValidity
+                                or self.lineValidity(end[0], end[1], p.pos[0], p.pos[1])
+                            ):
+                                if distance_to_end_point < nearest_dist:
+                                    nearest_dist = distance_to_end_point
+                                    nearest_solution = p
+                if nearest_solution:
+                    generate_path(nearest_solution)
 
         # out of grib scope
-        else:
+        except Exception:
             #print(3)
             minDist = 1000000
             isoc = lastlog.isochrones

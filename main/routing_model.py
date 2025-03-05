@@ -31,7 +31,9 @@ class Routing_Model:
         self._upwind_tack = False
         self.timestep = timestep*60
 
-    def _create_path(self):
+    def _create_path(self): # Deprecated
+        """INACTIVE
+        Funcion to create a path if there is no path on init"""
         start_latitude = float(input("Enter the starting lattitude: "))
         start_longitude = float(input("Enter the starting longitude: "))
         end_latitude = float(input("Enter the end lattitude: "))
@@ -41,10 +43,11 @@ class Routing_Model:
         self._current_path = Path(boat,start_latitude,start_longitude,end_latitude,end_longitude)
         self._current_grib = selected_grib
 
-    def _check_in_water(self,lat,lon) -> bool:
+    def _check_in_water(self,lat,lon) -> bool: # Active
         return globe.is_ocean(lat,lon)
 
-    def create_big_circle_route(self,ignore_exception:bool=False):
+    def create_big_circle_route(self,ignore_exception:bool=False): # Deprecated = Superceded by create_big_circle_route_v2
+        "Inactive"
         lat_s, lon_s , lat_e , lon_e = map(radians,
         [self._current_path.start_lattitude,
          self._current_path.start_longitude,
@@ -91,8 +94,9 @@ class Routing_Model:
     
 
 
-    def _straight_line_distance(self, gcr_flag:  bool=False):
-        """Timestep is expected int for mintures returns distance in nautical miles"""
+    def _straight_line_distance(self, gcr_flag:  bool=False)->float: # Deprecated
+        """INACTIVE
+        Timestep is expected int for mintures returns distance in nautical miles"""
         if not gcr_flag:
             lat = self._current_path.path_data["lat"][-1]
             lon = self._current_path.path_data["lon"][-1]
@@ -108,7 +112,8 @@ class Routing_Model:
         distance_nm = boatspeed * (globals.current_timestep)/60
         return distance_nm
     
-    def create_big_circle_route_online(self,ignore_exception:bool=False):
+    def create_big_circle_route_online(self,ignore_exception:bool=False): # Deprecated = Superceded by create_big_circle_route_online_v2
+        "Inactive"
         print("Creating Big Cirlce")
         print(self._current_path.start_lattitude)
         print(self._current_path.end_lattitude)
@@ -129,7 +134,7 @@ class Routing_Model:
         while not end_point:
             lat,lon = self._route_single_point_online(True)
             if not self._check_in_water(lat,lon) and not ignore_exception:
-                raise OutWaterException(f"point at {lat},{lon} is land ")
+                raise OutWaterException(f"point at {lon},{lat} is land ")
             elif not self._check_in_water(lat,lon) and ignore_exception:
                 land_list.append([lat,lon])
             self._current_path.path_data["great_circle_lat"].append(lat)
@@ -162,7 +167,8 @@ class Routing_Model:
         else: 
             return land_list
 
-    def create_big_circle_route_online_v2(self):
+    def create_big_circle_route_online_v2(self)->None: # Active
+        "Finds the greate circle distance using OpenMeteo for Weather Info"
         start_lat, start_lon = self._current_path.start_lattitude, self._current_path.start_longitude #y
         end_lat, end_lon = self._current_path.end_lattitude, self._current_path.end_longitude
         start_time = self._current_path.start_time #y
@@ -179,7 +185,7 @@ class Routing_Model:
             if not self._check_in_water(lat,lon) and exit_land:
                 prev_lat_holder, prev_lon_holder = self._current_path.path_data['great_circle_lat'][-1], self._current_path.path_data['great_circle_lon'][-1]
                 self._current_path.pop_great_circle_point()
-                raise ContinuedOutWaterException(f"point at {lat},{lon} is land and point at {prev_lat_holder},{prev_lon_holder} ")
+                raise ContinuedOutWaterException(f"point at {lon},{lat} is land and point at {prev_lat_holder},{prev_lon_holder} ")
             if not (self._check_in_water(lat,lon)) and (not exit_land):
                 exit_land = True
             self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = globals.current_timestep)))
@@ -195,11 +201,12 @@ class Routing_Model:
         final_time = self.find_time_for_distance(gcr_distances[-2])
         self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
                 
-    def create_big_circle_route_v2(self):
+    def create_big_circle_route_v2(self)->None: # Active
+        "Creates a Big Circle Route using the Current Grib"
         start_lat, start_lon = self._current_path.start_lattitude, self._current_path.start_longitude #y
         end_lat, end_lon = self._current_path.end_lattitude, self._current_path.end_longitude
         start_time = self._current_path.start_time #y
-        print(start_time)   #y
+        #print(start_time)   #y
         self._current_path.append_great_circle_point(start_lat,start_lon,start_time)#y
         end_point = False #y
         gcr_distances = [self._distance_from_current_to_end_v2(True)]
@@ -208,7 +215,7 @@ class Routing_Model:
         exit_land = False
         while not end_point:
             self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=self._current_path.path_data['great_circle_lat'][-1],start_lon=self._current_path.path_data['great_circle_lon'][-1],end_lat=end_lat,end_lon=end_lon) #y
-            lat,lon = self._route_single_point_online(True)
+            lat,lon = self._route_single_point(True)
             if not self._check_in_water(lat,lon) and exit_land:
                 prev_lat_holder, prev_lon_holder = self._current_path.path_data['great_circle_lat'][-1], self._current_path.path_data['great_circle_lon'][-1]
                 self._current_path.pop_great_circle_point()
@@ -218,7 +225,7 @@ class Routing_Model:
             self._current_path.append_great_circle_point(lat,lon,(start_time+timedelta(minutes = globals.current_timestep)))
             self._current_path._gcr_time += globals.current_timestep
             gcr_distances.append(self._distance_from_current_to_end_v2(gcr_flag=True))
-            print(f"gcr_distances are{gcr_distances}")
+            #print(f"gcr_distances are{gcr_distances}")
             if gcr_distances[-1] > (gcr_distances[-2]):
                 self._current_path.pop_great_circle_point()
                 end_point = True
@@ -228,7 +235,8 @@ class Routing_Model:
         final_time = self.find_time_for_distance(gcr_distances[-2])
         self._current_path.append_great_circle_point(end_lat,end_lon,time=(self._current_path.path_data["great_circle_times"][-1]+timedelta(minutes=final_time)))
         
-    def decompose_time(self,twa,distnace,ws_mag):
+    def decompose_time(self,twa,distnace,ws_mag)->float: # Active
+        "Finds the time in minutes for a given TWA (degrees) and Windspeed (knts)"
         across = distnace * sin(radians(twa))
         upwind= distnace * cos(radians(twa))
         first_mag = across / sin(radians(upwind_twa))
@@ -236,33 +244,39 @@ class Routing_Model:
         final_upwind = upwind-delta_upwind
         final_mag = final_upwind/(cos(radians(upwind_twa)))
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
-        time = (final_mag + first_mag)/float(boatspeed)
+        time = 60*(final_mag + first_mag)/float(boatspeed)
         return time
     
-    def find_time_for_distance(self,distance):
+    def find_time_for_distance(self,distance)->float: # Active
+        "Finds the time taken in minutes to go a certain distance along the great circle route"
         self._current_bearing = self._angle_to_destinatin_gcr_v2(start_lat=self._current_path.path_data["great_circle_lat"][-1],start_lon=self._current_path.path_data["great_circle_lon"][-1],end_lat=self._current_path.end_lattitude,end_lon=self._current_path.end_longitude)
-        if self._current_grib._filename == "dummy.grib2":
+        print(self._current_grib._filename)
+        if self._current_grib._filename == "dummy.grib2" or self._current_grib._filename == "dummy.txt":
             print("dummy")
             ws_mag, wind_heading = open_meteo.make_10mvu_request(lat=self._current_path.path_data["great_circle_lat"][-1],lon=self._current_path.path_data["great_circle_lon"][-1],time=self._current_path.path_data["great_circle_times"][-1])
         else:
-            wind_heading,ws_mag =self._current_grib.getWindAt(t,lat,lon)
-        twa = self._find_twa_mag_bear(radians(wind_heading))
+            wind_heading,ws_mag =self._current_grib.getWindAt(None,lat=self._current_path.path_data["great_circle_lat"][-1],lon=self._current_path.path_data["great_circle_lon"][-1],)
+        twa = self._find_twa_mag_bear(wind_heading)
         if twa >= upwind_twa:
             boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
-            time = distance/float(boatspeed)
+            time = 60* distance/float(boatspeed)
         else:
             print("estimate")
             time = self.decompose_time(twa,distance,ws_mag)
         return time
 
 
-    def upwind_twa_bearing_finder(self,lat,lon,time):
+    def upwind_twa_bearing_finder(self,lat,lon,time): #Deprecated
+        "INACTIVE"
         if self._angle_to_destinatin_gcr_v2():
             pass
         
             
-    def _straight_line_distance_online(self, gcr_flag:  bool=False):
-        """Timestep is expected int for mintures returns distance in nautical miles"""
+    def _straight_line_distance_online(self, gcr_flag:  bool=False)->float: # Active
+        """
+        Finds the distance to the next point, given the current timestep as an object attribute
+        Timestep is expected int for mintures returns distance in nautical miles
+        Works Online only"""
         if not gcr_flag:
             lat = self._current_path.path_data["lat"][-1]
             lon = self._current_path.path_data["lon"][-1]
@@ -272,7 +286,7 @@ class Routing_Model:
             lon = self._current_path.path_data["great_circle_lon"][-1]
             time = self._current_path.path_data["great_circle_times"][-1]
         ws_mag, wind_heading = open_meteo.make_10mvu_request(lat,lon,time)
-        twa = self._find_twa_mag_bear(radians(wind_heading))
+        twa = self._find_twa_mag_bear(wind_heading)
         print(f"twa is {twa} at {lat},{lon}")
         if twa < upwind_twa:
             boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
@@ -285,8 +299,11 @@ class Routing_Model:
             distance_nm = float(boatspeed) * (int(globals.current_timestep))/60
         return distance_nm
     
-    def _straight_line_distance_v2(self, gcr_flag:  bool=False):
-        """Timestep is expected int for mintures returns distance in nautical miles"""
+    def _straight_line_distance_v2(self, gcr_flag:  bool=False)->float: # Active
+        """
+        Finds the distance to the next point, given the current timestep as an object attribute
+        Timestep is expected int for mintures returns distance in nautical miles
+        Works with GRIB only"""
         if not gcr_flag:
             lat = self._current_path.path_data["lat"][-1]
             lon = self._current_path.path_data["lon"][-1]
@@ -295,8 +312,8 @@ class Routing_Model:
             lat = self._current_path.path_data["great_circle_lat"][-1]
             lon = self._current_path.path_data["great_circle_lon"][-1]
             time = self._current_path.path_data["great_circle_times"][-1]
-        wind_heading, ws_mag = self._current_grib.getWindAt(t,lat,lon)
-        twa = self._find_twa_mag_bear(radians(wind_heading))
+        wind_heading, ws_mag = self._current_grib.getWindAt(None,lat,lon)
+        twa = self._find_twa_mag_bear(wind_heading)
         print(f"twa is {twa} at {lat},{lon}")
         if twa < upwind_twa:
             boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,upwind_twa)
@@ -309,11 +326,13 @@ class Routing_Model:
             distance_nm = float(boatspeed) * (int(globals.current_timestep))/60
         return distance_nm
     
-    def _straight_line_distance_online_only(self, gcr_flag: bool = False):
+    def _straight_line_distance_online_only(self, gcr_flag: bool = False): # Deprecated
+        "INACTIVE"
         boatspeed = self._current_path
         
     
-    def _distance_from_current_to_end(self, gcr_flag: bool=False):
+    def _distance_from_current_to_end(self, gcr_flag: bool=False): # Deprecated = Superceded by _distance_from_current_to_end_v2
+        "INACTIVE"
         lat_e = self._current_path.end_lattitude
         lon_e = self._current_path.end_longitude
         if gcr_flag == True:
@@ -329,7 +348,7 @@ class Routing_Model:
         distance = (2* earth_radius)* asin(sqrt((1-cos(delta_lat)+((cos(current_lat)*cos(lat_e))*(1-cos(delta_lon))))/(2)))
         return distance
 
-    def _distance_from_current_to_end_v2(self, gcr_flag: bool=False):
+    def _distance_from_current_to_end_v2(self, gcr_flag: bool=False): # Active
         lat_e = self._current_path.end_lattitude
         lon_e = self._current_path.end_longitude
         if gcr_flag == True:
@@ -341,7 +360,8 @@ class Routing_Model:
         distance = haversine((current_lat,current_lon),(lat_e,lon_e), unit = Unit.NAUTICAL_MILES)
         return distance
 
-    def _route_single_point(self, gcr_flag: bool=False,lat:float=None,lon:float=None):
+    def _route_single_point(self, gcr_flag: bool=False,lat:float=None,lon:float=None): # Active
+        "Begins the routing process for a single point, offline using GRIB, purely used for abstraction"
         if not gcr_flag:
             distance_nm = self._straight_line_distance()
             current_point = (lat, lon)
@@ -351,7 +371,8 @@ class Routing_Model:
         new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return new_lat,new_lon
     
-    def _route_single_point_online(self, gcr_flag: bool=False,lat:float=None,lon:float=None):
+    def _route_single_point_online(self, gcr_flag: bool=False,lat:float=None,lon:float=None): # Active
+        "Begins the routing process for a single point, online using OpenMeteo API, purely used for abstraction"
         if not gcr_flag:
             distance_nm = self._straight_line_distance_online()
             current_point = (lat, lon)
@@ -362,13 +383,17 @@ class Routing_Model:
         return new_lat,new_lon
 
 
-    def _windspeed_magnitude_in_knts(self,u:float,v:float)->float:
-        "returns windspeed in knots"
+    def _windspeed_magnitude_in_knts(self,u:float,v:float)->float: # Deprecated
+        """INACTIVE
+        returns windspeed in knots
+        - Made Obselete by Updates to GRIB Class"""
         windspeed = sqrt(u**2 + v**2)
         knts = windspeed * 1.94384
         return knts
 
-    def find_windspeed_info(self,lat,lon,dtime:datetime)->tuple:
+    def find_windspeed_info(self,lat,lon,dtime:datetime)->tuple: #Deprecated
+        """INACTIVE
+        Made Obselete by Updates to GRIB Class"""
         grib_values_at_point = self._current_grib.read_single_line(lat,lon)
         current_index = self._current_grib["index"]
         if dtime.hour not in self._current_grib._data["times"]:
@@ -380,14 +405,17 @@ class Routing_Model:
                 v = grib_values_at_point[i]
         return u,v
         
-    def _get_new_grib(self,dtime:datetime):
+    def _get_new_grib(self,dtime:datetime): # Deprecated
+        "INACTIVE"
         ECWMF_Client = ECMWF_API(time=dtime)
         ECWMF_Client.make_request()
         self._current_grib = GRIB(ECWMF_Client._current_folder)
         pass
 
 
-    def _find_twa(self,u:float,v:float):
+    def _find_twa(self,u:float,v:float)->float: # Active
+        """Finds the TWA (True Wind Angle) for given u and v winds.
+        Outputs twa in degrees"""
         value = self._angle_to_destination_gcr(u,v)
         bearing = radians(self._current_bearing)
         angle = value - bearing
@@ -400,7 +428,11 @@ class Routing_Model:
             angle = degrees(angle)
         return angle
 
-    def _find_twa_mag_bear(self,wind_heading):
+    def _find_twa_mag_bear(self,wind_heading)->float: # Active
+        """Finds the TWA (True Wind Angle) for an input wind bearing and the current boat bearing
+        Input is in degrees
+        output is in degrees
+        """
         bearing = self._current_bearing % 360
         wind_heading_ranged = wind_heading % 360
         if wind_heading_ranged > bearing and bearing > 180:
@@ -425,8 +457,9 @@ class Routing_Model:
         print(f"Current_TWA is: {angle}")
         return angle
 
-    def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float:
-        "Returns an angle bearing in radians, can work with v and u components of wind speed"
+    def _angle_to_destination_gcr(self,delta_lat:float,delta_lon:float)->float: # Deprecated = Superceded by _angle_to_destinatin_gcr_v2
+        """INACTIVE
+        Returns an angle bearing in radians, can work with v and u components of wind speed"""
         if delta_lon == 0 and delta_lat == 0:
             raise PathError(f"Start and end points are the same {delta_lon} {delta_lat}")  
         angle = atan2(delta_lon,delta_lat)
@@ -434,15 +467,17 @@ class Routing_Model:
             angle += (2* pi)
         return angle
     
-    def _angle_to_destinatin_gcr_v2(self,start_lat,end_lat, start_lon,end_lon):
+    def _angle_to_destinatin_gcr_v2(self,start_lat,end_lat, start_lon,end_lon) -> float: # Active
         "Differs from previous by returing in degrees, is no longer 2d and follows spherical earth, returns in degrees"
         delta_lon = end_lon - start_lon
+        print(f"Found term in angel too {start_lon},{start_lat}")
         holder1 = sin(radians(delta_lon)) *  cos(radians(end_lat))
         holder2 = cos(radians(start_lat)) * sin(radians(end_lat)) - sin(radians(start_lat)) * cos(radians(end_lat)) * cos(radians(delta_lon))
         bearing = atan2(holder1,holder2)
         return (degrees(bearing) + 360) % 360
 
-    def run_isometric(self):
+    def run_isometric(self)-> None: # Deprecated - Was used previously to route isometrically
+        "Inactive"
         land = []
         try:
             self.create_big_circle_route()
@@ -453,7 +488,8 @@ class Routing_Model:
         else:
             self.visited_points = []
 
-    def isometric(self,lat,lon,time:datetime,cur_path: list =None):
+    def isometric(self,lat,lon,time:datetime,cur_path: list =None)->list: # Deprecated
+        "Inactive"
         print("1")
         if cur_path is None:
             cur_path = [(lat,lon,time)]
@@ -474,7 +510,8 @@ class Routing_Model:
                 points.extend(new_points)
         return points
 
-    def route_iso_point(self,lat,lon,time:datetime):
+    def route_iso_point(self,lat,lon,time:datetime)->tuple: # Deprecated
+        "Inactive"
         u,v = self.find_windspeed_info(lat,lon,time)
         ws_mag = self._windspeed_magnitude_in_knts(u,v)
         twa = self._find_twa(u,v)
@@ -484,7 +521,8 @@ class Routing_Model:
         new_lat,new_lon = inverse_haversine(current_point,(1.852*distance_nm),radians(self._current_bearing))
         return (new_lat,new_lon)
 
-    def isometric_online(self,lat,lon,time:datetime,cur_path: list =None):
+    def isometric_online(self,lat,lon,time:datetime,cur_path: list =None)-> list: # Deprecated
+        "Inactive"
         print("1")
         if cur_path is None:
             cur_path = [(lat,lon,time)]
@@ -506,15 +544,16 @@ class Routing_Model:
         return points
 
 
-    def route_iso_point_online(self,lat,lon,time:datetime):
+    def route_iso_point_online(self,lat,lon,time:datetime)-> tuple: # Deprecated
+        "Inactive"
         print("pointed")
         ws_mag, ws_dir = open_meteo.make_10mvu_request(lat,lon,time)
-        twa = self._find_twa_mag_bear(radians(ws_dir))
+        twa = self._find_twa_mag_bear(ws_dir)
         while twa < 30:
             self._current_bearing +=30
             if self._current_bearing > 360:
                 self._current_bearing -= 360
-            twa = self._find_twa_mag_bear(radians(ws_dir))
+            twa = self._find_twa_mag_bear(ws_dir)
         boatspeed = self._current_path.current_boat.find_polar_speed(ws_mag,twa)
         distance_nm = float(boatspeed) * (globals.current_timestep)/60
         current_point = (lat, lon)

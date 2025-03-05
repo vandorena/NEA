@@ -178,8 +178,8 @@ class Router:
 
         def pointF(p, tws, twa, dt, brg):
             #print("Looking for speed in libweather router")
-            speed = self.polar.find_polar_speed(tws, math.copysign(twa, 1))
-            #print(f"Found a speed of {speed}")
+            speed = self.polar.find_polar_speed(tws, math.copysign(math.degrees(twa), 1))
+            #                                                                                                                                                                                                                                                                                                                                      print(f"Found a speed of {speed} with tws of {tws} and a twa of {twa}")
 
             rpd = (
                 utils.routagePointDistance(

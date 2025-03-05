@@ -14,8 +14,10 @@ class Boat:
             "name":name
         }
 
-    def add_polar_v1(self,filename:str):
+    def add_polar_v1(self,filename:str)->None: #Deprecated = Superceded by add_polar_v2
         """
+        INACTIVE
+        Adds the Polar Data from a file to the Boat's data
         Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
         """
         #Logic error resulting in speeds being only as long as the number of wind speeds instead of as long as the nuember of headings
@@ -70,7 +72,11 @@ class Boat:
         #print(self.data)
         return
 
-    def add_polar_v2(self,filename:str):
+    def add_polar_v2(self,filename:str): # Active
+        """
+        Adds the Polar Data from a file to the Boat's data
+        Dictionary format: "name": str , "windspeeds": list of windspeed keys, windspeedkey1: [list of speeds], indexed by headinglist
+        """
         filename = os.path.join("Boats",filename)
         with open(filename,"r") as file:
             line_array = file.readlines()
@@ -83,7 +89,8 @@ class Boat:
         else:
             raise PolarFileNoMetadata(f"There is no metadata in file: {filename}")
         
-    def _parse_TWA_TWS(self,lines:list):
+    def _parse_TWA_TWS(self,lines:list): # Active
+        """Parses data from Polar file of type TWA/TWS"""
         self.data["heading_list"] = []
         for i in range(0,len(lines)):
             current_line = lines[i].split()
@@ -98,13 +105,17 @@ class Boat:
                     self.data[current_wind].append(current_line[z])
                
 
-    def _list_to_int(self,list:list):
+    def _list_to_int(self,list:list)->list: # Active
+        "Translates a list of type str(int) to list of int"
         new_list = []
         for i in range(0,len(list)):
             new_list.append(int(list[i]))
         return new_list
     
-    def _binary_list_class_search(self,input_list: list, search_term: int):
+    def _binary_list_class_search(self,input_list: list, search_term: int)->int: # Active
+        """Searches the list to find an index.
+            Starts with a binary search, but if cannot find, it looks through the sorted list linearly and rounds up to next value.
+        """
         ##print(f"boo   {search_term}")
         ##print(input_list)
         list_length = len(input_list)
@@ -145,7 +156,9 @@ class Boat:
                 found_index = (len(input_list)-1)
         return found_index
                 
-    def find_polar_speed(self,windspeed,heading):
+    def find_polar_speed(self,windspeed,heading): # Active
+        """finds boatspeed for a certain windspeed and heading
+        heading expected in degrees,windspeed expected in knots"""
         reference_windspeeds = self._list_to_int(self.data["wind_list"])
         reference_headings = self._list_to_int(self.data["heading_list"])
         #print(f"heading_list is {reference_headings}")

@@ -48,24 +48,39 @@ class Path:
             "gcr_start_time": None,
         }
 
-    def set_start(self):
+    def set_start(self): # Deprecated
+        "INACTIVE - Unused"
         self.started = True
 
 
-    def append_great_circle_point(self,lat:float,lon:float,time:datetime):
+    def append_great_circle_point(self,lat:float,lon:float,time:datetime): # Active
+        "Appends a single point onto the great circle route"
         self.path_data["great_circle_lat"].append(lat)
         self.path_data["great_circle_lon"].append(lon)
         self.path_data["great_circle_times"].append(time)
 
-    def pop_great_circle_point(self):
+    def pop_great_circle_point(self): # Active
+        "Removes the most recent point on the great circle route"
         self.path_data["great_circle_lat"].pop()
         self.path_data["great_circle_lon"].pop()
         self.path_data["great_circle_times"].pop()
 
-    def set_end(self):
+    def clear_great_circle(self): # Active
+        "Resets the Great Circle Route"
+        self.path_data["great_circle_lat"] = []
+        self.path_data["great_circle_lon"] = []
+        self.path_data["great_circle_times"] = []
+        self.path_data["great_circle_lat"].append(self.start_lattitude)
+        self.path_data["great_circle_lon"].append(self.start_longitude)
+        self.path_data["great_circle_times"].append(self.start_time)
+
+    def set_end(self): # Deprecated
+        "INACTIVE _ Unused"
         self.ended = True
-    def get_previous_point(self) -> list:
-        """Returns a list off previous_x,previous_y,previous_time"""
+
+    def get_previous_point(self) -> list: # Deprecated
+        """INACTIVE
+        Returns a list off previous_x,previous_y,previous_time = UNUSED"""
         if self.started == False:
             return [self.start_lattitude, self.start_longitude,self.start_time]
         else:
@@ -74,8 +89,9 @@ class Path:
             previous_time = self.path_data["times"][-1]
             return [previous_x, previous_y,previous_time]
         
-    def log(self,data_array: list):
-        """Expects a list of 12 values.
+    def log(self,data_array: list): # Deprecated
+        """INACTIVE 
+        Expects a list of 12 values.
         lat, lon, time:datetime, assumes time is realtime not timedelta, speed, windspeed,wind_direction, wave_height, wave_direction, air_pressure, current_direction, current_speed"""
         if len(data_array) == len(self.path_data_names):
             for i in range(0,len(self.path_data_names)):
@@ -84,10 +100,12 @@ class Path:
         else:
             raise LogArrayLengthException
         
-    def getXgetY(self)-> tuple:
+    def getXgetY(self)-> tuple: # Deprecated
+        "INACTIVE"
         return self.path_data["lat"],self.path_data["lon"]
 
-    def _find_index_times(self,time)->datetime:
+    def _find_index_times(self,time)->datetime: # Deprecated
+        "INACTIVE"
         if time in self.path_data["times"]:
             return self.path_data["times"].index(time)
         else:
@@ -100,8 +118,9 @@ class Path:
                     if time > self.path_data["times"][i-1] and time < self.path_data["times"][i]:
                         return self.path_data["times"][i]
     
-    def _find_index_matcher_list(self,lat,lon) -> list:
-        """Assumes both in self.path_data
+    def _find_index_matcher_list(self,lat,lon) -> list: # Deprecated - Was going to be used to implent path searching
+        """INACTIVE
+        Assumes both in self.path_data
         Binary Search to find the index of points that go through that latitude of longitude"""
         lat_elements_to_check = len(self.path_data["lat"])
         lon_elements_to_check = len(self.path_data["lon"])
@@ -139,5 +158,6 @@ class Path:
             
 
     
-    def point_query(self,lat,lon) -> tuple:
-        """lat and lon must be taken from the lists given by the getXgetY function"""
+    def point_query(self,lat,lon) -> tuple: #Unfinished - Deprecated
+        """INACTIVE
+        lat and lon must be taken from the lists given by the getXgetY function"""
