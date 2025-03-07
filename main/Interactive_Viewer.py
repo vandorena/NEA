@@ -208,18 +208,20 @@ def viewer(doc):
         start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
         ##print("please help me, it should be coming here")
         #try:
+        if globals.selected_grib is None:
+            return 
         while tap_count == number_of_points:
             #print("Begann routing")
             if grib_mode:
                 cur_grib = globals.selected_grib
                 print(f"Used current Grib")
-            elif globals.selected_grib is None:
-                cur_grib = mock_grib(13,120,1)
-                print(f"Used Mock Grib")
+                #cur_grib = mock_grib(13,120,1)
+                #print(f"Used Mock Grib")
             else:
-                cur_grib = None
-                cur_grib = mock_grib(13,120,1)
-                print("Used Mock grib after failing to use current grib")
+                return
+               # cur_grib = None
+                #cur_grib = mock_grib(13,120,1)
+                #print("Used Mock grib after failing to use current grib")
             track = intermediate_points + [(end_lat,end_lon)]
             cur_boat = globals.selected_boat
             routing_object = Routing(algorithm=LinearBestIsoRouter, polar=cur_boat,track=track,grib=cur_grib,startDatetime=start_time,startPosition=(start_lat,start_lon))
