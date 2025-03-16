@@ -208,6 +208,8 @@ def viewer(doc):
         start_lat, start_lon = web_mercator_to_lat_lon(start_x,start_y)
         ##print("please help me, it should be coming here")
         #try:
+        if globals.selected_grib is None:
+            return 
         while tap_count == number_of_points:
             #print("Begann routing")
             if grib_mode:
