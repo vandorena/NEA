@@ -225,9 +225,12 @@ def viewer(doc):
                 #cur_grib = mock_grib(13,120,1)
                 #print("Used Mock grib after failing to use current grib")
             print(f"Intermediate points is {intermediate_points}")
-            xs,ys = zip(*intermediate_points)
-            intermediate_points_copy = list(map(web_mercator_to_lat_lon,xs,ys))
-            print(f"inter copy {intermediate_points_copy}")
+            try:
+                xs,ys = zip(*intermediate_points)
+                intermediate_points_copy = list(map(web_mercator_to_lat_lon,xs,ys))
+                print(f"inter copy {intermediate_points_copy}")
+            except ValueError:
+                intermediate_points_copy = []
             track = intermediate_points_copy + [(end_lat,end_lon)]
             cur_boat = globals.selected_boat
             routing_object = Routing(algorithm=LinearBestIsoRouter, polar=cur_boat,track=track,grib=cur_grib,startDatetime=start_time,startPosition=(start_lat,start_lon))
