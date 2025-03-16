@@ -7,6 +7,13 @@ class PolarFileError(Exception):
 class PolarFileNoMetadata(PolarFileError):
     """"Excetion Raised when the Polar File has no Metadata"""
 
+def is_float(val):
+    try:
+        float(val)
+        return True
+    except ValueError:
+        return False
+
 class Boat:
 
     def __init__(self,name: str) -> None:
@@ -159,6 +166,8 @@ class Boat:
     def find_polar_speed(self,windspeed,heading): # Active
         """finds boatspeed for a certain windspeed and heading
         heading expected in degrees,windspeed expected in knots"""
+        if not is_float(windspeed) or  not is_float(heading):
+            return
         reference_windspeeds = self._list_to_int(self.data["wind_list"])
         reference_headings = self._list_to_int(self.data["heading_list"])
         #print(f"heading_list is {reference_headings}")

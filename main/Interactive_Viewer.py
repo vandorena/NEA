@@ -214,13 +214,19 @@ def viewer(doc):
                 cur_grib = globals.selected_grib
                 print(f"Used current Grib")
             elif globals.selected_grib is None:
-                cur_grib = mock_grib(13,120,1)
-                print(f"Used Mock Grib")
+                return
+                #cur_grib = mock_grib(13,120,1)
+                #print(f"Used Mock Grib")
             else:
-                cur_grib = None
-                cur_grib = mock_grib(13,120,1)
-                print("Used Mock grib after failing to use current grib")
-            track = intermediate_points + [(end_lat,end_lon)]
+                return
+               # cur_grib = None
+                #cur_grib = mock_grib(13,120,1)
+                #print("Used Mock grib after failing to use current grib")
+            print(f"Intermediate points is {intermediate_points}")
+            xs,ys = zip(*intermediate_points)
+            intermediate_points_copy = list(map(web_mercator_to_lat_lon,xs,ys))
+            print(f"inter copy {intermediate_points_copy}")
+            track = intermediate_points_copy + [(end_lat,end_lon)]
             cur_boat = globals.selected_boat
             routing_object = Routing(algorithm=LinearBestIsoRouter, polar=cur_boat,track=track,grib=cur_grib,startDatetime=start_time,startPosition=(start_lat,start_lon))
             print("Object is made")
@@ -235,16 +241,18 @@ def viewer(doc):
             for isopoint in result.path:
                 path_pos_list.append(isopoint.pos)
             lats, lons = zip(*path_pos_list)
+            ocean_list =  list(map(is_ocean,lats,lons))
             xs,ys = zip(*map(lat_lon_to_web_mercator,lats,lons))
             ##print(f"xs and ys {xs},{ys}")
             source = ColumnDataSource({'x':xs,'y':ys})
-            plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
-            plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
-            fastest_route_div.text = f"{result.path}"
-            current_color +=1
-            found_time = result.path
-            #print(result.path)
-            times_div.text = times_div.text + f"<br> <b> Fastest Route takes: </b> {found_time}"
+            if False not in ocean_list:
+                plot.line(source=source,legend_label=f"Fastest Route", color=plot_colors[(current_color%len(plot_colors))],line_width=2)
+                plot.scatter(source=source,color=plot_colors[((current_color+4)%len(plot_colors))-1],size=4)
+                fastest_route_div.text = f"{result.path}"
+                current_color +=1
+                found_time = result.path
+                #print(kresult.path)
+                times_div.text = times_div.text + f"<br> <b> Fastest Route takes: </b> {found_time}"
             break
         #except BaseException:
          #   #print("Ummm")

@@ -40,5 +40,5 @@ def create_main_page(doc):
         )
     button_grib.js_on_event('button_click',CustomJS(code="window.location.href='/grib_manager'"))
 
-    layout = row(button_routing,button_boats,button_grib)
+    layout = row(button_routing,button_boats)
     doc.add_root(layout)
