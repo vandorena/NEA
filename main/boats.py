@@ -125,6 +125,8 @@ class Boat:
         """
         ##print(f"boo   {search_term}")
         ##print(input_list)
+        if search_term < input_list[0]:
+            return 0
         list_length = len(input_list)
         current_index = list_length//2
         found = False
