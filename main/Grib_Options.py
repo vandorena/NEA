@@ -305,6 +305,8 @@ class GRIB: # Active
     
     def _read_all(self): #ACTIVE
         """Assumes all messages are single level"""
+        print("Beginning Read All")
+        print("READING NOW!!!!")
         self._create_grid()
         with open(self._path, 'rb') as file:
             big_list = []
